@@ -8,10 +8,11 @@ Uso:
 
 Cada transacción se normaliza a un registro JSON con:
     fecha, mes, persona, tarjeta, referencia, descripcion, lugar,
-    moneda, monto, monto_crc, categoria
+    moneda, monto, monto_usd, categoria
 
 La persona se asigna según los últimos 4 dígitos de la sub-tarjeta.
-El monto en dólares se convierte a colones con la tasa de config/categorias.json.
+`monto_usd` es el monto normalizado a dólares: CRC→USD (tasa_usd_crc),
+USD se mantiene y EUR→USD (tasa_eur_usd). Tasas en config/categorias.json.
 """
 import re
 import json
@@ -80,6 +81,15 @@ def categorizar(desc: str, config: dict):
             if kw.lower() in d:
                 return cat["nombre"]
     return config.get("otros_nombre", "Otros")
+
+
+def a_usd(moneda: str, monto: float, config: dict):
+    """Normaliza el monto a dólares: CRC→USD, USD se mantiene, EUR→USD."""
+    if moneda == "CRC":
+        return round(monto / config.get("tasa_usd_crc", 445.0), 2)
+    if moneda == "EUR":
+        return round(monto * config.get("tasa_eur_usd", 1.08), 2)
+    return monto
 
 
 def extraer_texto(pdf_path: str):
@@ -156,7 +166,7 @@ def parsear(texto: str, config: dict):
             fecha = parse_fecha(limpio[i])
             i += 1
             desc_parts = []
-            while i < n and limpio[i] not in ("USD", "CRC") and not REF_RE.match(limpio[i]):
+            while i < n and limpio[i] not in ("USD", "CRC", "EUR") and not REF_RE.match(limpio[i]):
                 desc_parts.append(limpio[i])
                 i += 1
             if i >= n:
@@ -182,7 +192,7 @@ def parsear(texto: str, config: dict):
                 "lugar": PAISES.get(lugar, lugar) if lugar else None,
                 "moneda": moneda,
                 "monto": monto,
-                "monto_crc": monto if moneda == "CRC" else round(monto * config.get("tasa_usd_crc", 530.0), 2),
+                "monto_usd": a_usd(moneda, monto, config),
                 "categoria": cat,
             })
 
@@ -204,20 +214,29 @@ def main():
     personas = {}
     categorias = {}
     total_crc = 0.0
+    total_usd_nativo = 0.0
+    total_eur_nativo = 0.0
     total_usd = 0.0
     for t in tx:
         personas[t["persona"]] = personas.get(t["persona"], 0) + 1
         categorias[t["categoria"]] = categorias.get(t["categoria"], 0) + 1
+        m = t["monto"] or 0
         if t["moneda"] == "CRC":
-            total_crc += t["monto"] or 0
+            total_crc += m
+        elif t["moneda"] == "EUR":
+            total_eur_nativo += m
         else:
-            total_usd += t["monto"] or 0
+            total_usd_nativo += m
+        total_usd += t["monto_usd"] or 0
 
     print(f"Transacciones: {len(tx)}")
     print(f"Por persona: {json.dumps(personas, ensure_ascii=False)}")
     print(f"Por categoría: {json.dumps(categorias, ensure_ascii=False)}")
-    print(f"Total CRC (compras): {total_crc:,.2f}")
-    print(f"Total USD (compras): {total_usd:,.2f}")
+    print(f"Total CRC (nativo): {total_crc:,.2f}")
+    print(f"Total USD (nativo): {total_usd_nativo:,.2f}")
+    if total_eur_nativo:
+        print(f"Total EUR (nativo): {total_eur_nativo:,.2f}")
+    print(f"Total en USD (normalizado): {total_usd:,.2f}")
 
     out = args.output or str(Path(args.pdf).with_suffix(".json"))
     Path(out).write_text(json.dumps(tx, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -94,7 +94,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
   </section>
 
   <footer class="text-center text-xs text-slate-600 mt-8 pb-4">
-    Finanzas_NZ · datos desde Firebase Firestore (proyecto <span id="projId"></span>) · tipo de cambio USD→CRC: ¢<span id="tasaLabel"></span>
+    Finanzas_NZ · datos desde Firebase Firestore (proyecto <span id="projId"></span>) · montos en USD · CRC→USD ¢<span id="tasaLabel"></span> · EUR→USD $<span id="tasaEurLabel"></span>
   </footer>
 </div>
 
@@ -109,7 +109,8 @@ const FIREBASE_CONFIG = {
   appId: "1:397626969769:web:335267b0ff4b80f91f23b8",
   measurementId: "G-SN5RCHRYPN"
 };
-const USD_CRC = 530;          // tipo de cambio para totales en colones
+const USD_CRC = 445;          // colones por 1 dólar
+const EUR_USD = 1.08;         // dólares por 1 euro
 const USAR_FIREBASE = true;   // false = forzar datos locales (demo)
 
 // ─────────────────────────── Estado ───────────────────────────
@@ -119,11 +120,10 @@ let PRESUPUESTOS = {};  // presupuestos por mes { "YYYY-MM": {...} }
 let mesActual = null;
 let fuente = 'local';
 
-const fmtCRC = n => '¢' + (n ?? 0).toLocaleString('es-CR', {minimumFractionDigits:0, maximumFractionDigits:0});
-const fmtCRC2 = n => '¢' + (n ?? 0).toLocaleString('es-CR', {minimumFractionDigits:2, maximumFractionDigits:2});
-const fmtUSD = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-
-const crc = t => t.moneda === 'CRC' ? (t.monto ?? 0) : (t.monto ?? 0) * USD_CRC;
+const money = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+const money2 = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const usd = t => (t.monto_usd ?? 0);
+const native = t => (t.moneda === 'CRC' ? '¢' : t.moneda === 'EUR' ? '€' : '$') + (t.monto ?? 0).toLocaleString('es-CR', {maximumFractionDigits:2});
 
 // ─────────────────────────── Carga de datos ───────────────────────────
 async function cargarDatos() {
@@ -182,7 +182,7 @@ function agregar(fn, list) {
   const acc = {};
   for (const t of list) {
     const k = fn(t);
-    acc[k] = (acc[k] || 0) + crc(t);
+    acc[k] = (acc[k] || 0) + usd(t);
   }
   return acc;
 }
@@ -196,7 +196,7 @@ function mkChart(id, cfg) {
 
 function renderKpis() {
   const txs = txDelMes();
-  const total = txs.reduce((s, t) => s + crc(t), 0);
+  const total = txs.reduce((s, t) => s + usd(t), 0);
   const porCat = agregar(t => t.categoria, txs);
   const porPer = agregar(t => t.persona, txs);
   const topCat = Object.entries(porCat).sort((a,b) => b[1]-a[1])[0];
@@ -205,12 +205,12 @@ function renderKpis() {
   const dif = presupTotal != null ? total - presupTotal : null;
 
   const kpis = [
-    { label: 'Gasto del mes', valor: fmtCRC(total), sub: `${txs.length} transacciones` },
-    { label: 'Presupuesto', valor: presupTotal != null ? fmtCRC(presupTotal) : '—', sub: dif != null
-        ? (dif <= 0 ? `Disponible ${fmtCRC(-dif)}` : `Excedido ${fmtCRC(dif)}`) : 'sin presupuesto',
+    { label: 'Gasto del mes', valor: money(total), sub: `${txs.length} transacciones` },
+    { label: 'Presupuesto', valor: presupTotal != null ? money(presupTotal) : '—', sub: dif != null
+        ? (dif <= 0 ? `Disponible ${money(-dif)}` : `Excedido ${money(dif)}`) : 'sin presupuesto',
       color: dif != null && dif > 0 ? 'text-rose-400' : 'text-emerald-400' },
-    { label: 'Top categoría', valor: topCat ? topCat[0] : '—', sub: topCat ? fmtCRC(topCat[1]) : '' },
-    { label: 'Top persona', valor: topPer ? topPer[0] : '—', sub: topPer ? fmtCRC(topPer[1]) : '' },
+    { label: 'Top categoría', valor: topCat ? topCat[0] : '—', sub: topCat ? money(topCat[1]) : '' },
+    { label: 'Top persona', valor: topPer ? topPer[0] : '—', sub: topPer ? money(topPer[1]) : '' },
   ];
   document.getElementById('kpis').innerHTML = kpis.map(k => `
     <div class="card p-4">
@@ -232,7 +232,7 @@ function renderCharts() {
     type: 'bar',
     data: { labels: cats.map(c => c[0]), datasets: [{ data: cats.map(c => c[1]), backgroundColor: cols, borderRadius: 6 }] },
     options: { indexAxis: 'y', plugins: { legend: { display: false } },
-      scales: { x: { ticks: { color: '#64748b', callback: v => fmtCRC(v) }, grid: { color: '#1f2a44' } },
+      scales: { x: { ticks: { color: '#64748b', callback: v => money(v) }, grid: { color: '#1f2a44' } },
                 y: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
   });
 
@@ -253,7 +253,7 @@ function renderCharts() {
         { label: 'Presupuesto', data: meses.map(m => (PRESUPUESTOS[m]?.total) || 0), backgroundColor: '#334155', borderRadius: 4 }
       ] },
     options: { plugins: { legend: { labels: { color: '#94a3b8' } } },
-      scales: { y: { ticks: { color: '#64748b', callback: v => fmtCRC(v) }, grid: { color: '#1f2a44' } },
+      scales: { y: { ticks: { color: '#64748b', callback: v => money(v) }, grid: { color: '#1f2a44' } },
                 x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
   });
 }
@@ -264,8 +264,8 @@ function barra(actual, presup) {
   const color = excede ? 'bg-rose-500' : 'bg-emerald-500';
   return `
     <div class="flex justify-between text-xs mb-1">
-      <span class="text-slate-300">${presup != null ? fmtCRC(actual) : ''}</span>
-      <span class="text-slate-500">${presup != null ? 'de ' + fmtCRC(presup) : ''}</span>
+      <span class="text-slate-300">${presup != null ? money(actual) : ''}</span>
+      <span class="text-slate-500">${presup != null ? 'de ' + money(presup) : ''}</span>
     </div>
     <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
       <div class="h-full ${color} rounded-full" style="width:${pct}%"></div>
@@ -286,7 +286,7 @@ function renderPresupuesto() {
       <div>
         <div class="flex justify-between text-sm mb-1">
           <span class="font-medium text-slate-200">${p}</span>
-          <span class="text-xs ${(porPer[p]||0) > pp[p] ? 'text-rose-400' : 'text-emerald-400'}">${fmtCRC(porPer[p]||0)} / ${fmtCRC(pp[p])}</span>
+          <span class="text-xs ${(porPer[p]||0) > pp[p] ? 'text-rose-400' : 'text-emerald-400'}">${money(porPer[p]||0)} / ${money(pp[p])}</span>
         </div>
         ${barra(porPer[p]||0, pp[p])}
       </div>`).join('');
@@ -301,7 +301,7 @@ function renderPresupuesto() {
       <div>
         <div class="flex justify-between text-sm mb-1">
           <span class="text-slate-200">${c}</span>
-          <span class="text-xs ${(porCat[c]||0) > pc[c] ? 'text-rose-400' : 'text-emerald-400'}">${fmtCRC(porCat[c]||0)} / ${fmtCRC(pc[c])}</span>
+          <span class="text-xs ${(porCat[c]||0) > pc[c] ? 'text-rose-400' : 'text-emerald-400'}">${money(porCat[c]||0)} / ${money(pc[c])}</span>
         </div>
         ${barra(porCat[c]||0, pc[c])}
       </div>`).join('');
@@ -326,7 +326,7 @@ function renderTabla() {
       <td class="py-2 pr-3 text-slate-300">${(t.descripcion||'').replace(/_/g,' ')}</td>
       <td class="py-2 pr-3 text-xs text-slate-400">${t.categoria}</td>
       <td class="py-2 pr-3 text-xs text-slate-500">${t.lugar || ''}</td>
-      <td class="py-2 text-right font-medium whitespace-nowrap ${(t.monto||0) < 0 ? 'text-emerald-400' : 'text-slate-200'}">${t.moneda === 'USD' ? fmtUSD(t.monto) : fmtCRC2(t.monto)}</td>
+      <td class="py-2 text-right font-medium whitespace-nowrap ${(t.monto||0) < 0 ? 'text-emerald-400' : 'text-slate-200'}">${money2(t.monto_usd)}${t.moneda !== 'USD' ? '<div class="text-xs text-slate-500 font-normal">'+native(t)+'</div>' : ''}</td>
     </tr>`).join('') || '<tr><td colspan="6" class="py-4 text-center text-slate-500">Sin transacciones</td></tr>';
 }
 
@@ -351,6 +351,7 @@ function render() {
   document.getElementById('fuenteBtn').textContent = fuente === 'firestore' ? '● Firestore' : '● datos locales';
   document.getElementById('projId').textContent = FIREBASE_CONFIG.projectId;
   document.getElementById('tasaLabel').textContent = USD_CRC;
+  document.getElementById('tasaEurLabel').textContent = EUR_USD;
 }
 
 document.getElementById('mesSel').addEventListener('change', e => { mesActual = e.target.value; PRESUPUESTO = PRESUPUESTOS[mesActual] || null; render(); });

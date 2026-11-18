@@ -5,7 +5,8 @@
     "4613": "Iker",
     "6687": "Daniel"
   },
-  "tasa_usd_crc": 530.0,
+  "tasa_usd_crc": 445.0,
+  "tasa_eur_usd": 1.08,
   "categorias": [
     {
       "nombre": "Suscripciones",

@@ -9,7 +9,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 9.74,
-    "monto_crc": 5162.2,
+    "monto_usd": 9.74,
     "categoria": "Transporte"
   },
   {
@@ -22,7 +22,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 34.52,
-    "monto_crc": 18295.6,
+    "monto_usd": 34.52,
     "categoria": "Otros"
   },
   {
@@ -35,7 +35,7 @@
     "lugar": "Luxemburgo",
     "moneda": "USD",
     "monto": 28.71,
-    "monto_crc": 15216.3,
+    "monto_usd": 28.71,
     "categoria": "Otros"
   },
   {
@@ -48,7 +48,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 2.69,
-    "monto_crc": 1425.7,
+    "monto_usd": 2.69,
     "categoria": "Supermercado"
   },
   {
@@ -61,7 +61,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 35.36,
-    "monto_crc": 18740.8,
+    "monto_usd": 35.36,
     "categoria": "Supermercado"
   },
   {
@@ -74,7 +74,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 5.68,
-    "monto_crc": 3010.4,
+    "monto_usd": 5.68,
     "categoria": "Belleza y personal"
   },
   {
@@ -87,7 +87,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 12.66,
-    "monto_crc": 6709.8,
+    "monto_usd": 12.66,
     "categoria": "Restaurantes"
   },
   {
@@ -100,7 +100,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 1.94,
-    "monto_crc": 1028.2,
+    "monto_usd": 1.94,
     "categoria": "Supermercado"
   },
   {
@@ -113,7 +113,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 6.77,
-    "monto_crc": 3588.1,
+    "monto_usd": 6.77,
     "categoria": "Supermercado"
   },
   {
@@ -126,7 +126,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 18.09,
-    "monto_crc": 9587.7,
+    "monto_usd": 18.09,
     "categoria": "Supermercado"
   },
   {
@@ -139,7 +139,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 3.85,
-    "monto_crc": 2040.5,
+    "monto_usd": 3.85,
     "categoria": "Restaurantes"
   },
   {
@@ -152,7 +152,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 9.07,
-    "monto_crc": 4807.1,
+    "monto_usd": 9.07,
     "categoria": "Educación"
   },
   {
@@ -165,7 +165,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 5.73,
-    "monto_crc": 3036.9,
+    "monto_usd": 5.73,
     "categoria": "Restaurantes"
   },
   {
@@ -178,7 +178,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 10.19,
-    "monto_crc": 5400.7,
+    "monto_usd": 10.19,
     "categoria": "Restaurantes"
   },
   {
@@ -191,7 +191,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 8.59,
-    "monto_crc": 4552.7,
+    "monto_usd": 8.59,
     "categoria": "Restaurantes"
   },
   {
@@ -204,7 +204,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 14.66,
-    "monto_crc": 7769.8,
+    "monto_usd": 14.66,
     "categoria": "Restaurantes"
   },
   {
@@ -217,7 +217,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 41.8,
-    "monto_crc": 22154.0,
+    "monto_usd": 41.8,
     "categoria": "Restaurantes"
   },
   {
@@ -230,7 +230,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 23.0,
-    "monto_crc": 12190.0,
+    "monto_usd": 23.0,
     "categoria": "Restaurantes"
   },
   {
@@ -243,7 +243,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 4.58,
-    "monto_crc": 2427.4,
+    "monto_usd": 4.58,
     "categoria": "Suscripciones"
   },
   {
@@ -256,7 +256,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 46.13,
-    "monto_crc": 24448.9,
+    "monto_usd": 46.13,
     "categoria": "Supermercado"
   },
   {
@@ -269,7 +269,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 27.45,
-    "monto_crc": 14548.5,
+    "monto_usd": 27.45,
     "categoria": "Supermercado"
   },
   {
@@ -282,7 +282,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 22.9,
-    "monto_crc": 12137.0,
+    "monto_usd": 22.9,
     "categoria": "Educación"
   },
   {
@@ -295,7 +295,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 7.86,
-    "monto_crc": 4165.8,
+    "monto_usd": 7.86,
     "categoria": "Supermercado"
   },
   {
@@ -308,7 +308,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 50.38,
-    "monto_crc": 26701.4,
+    "monto_usd": 50.38,
     "categoria": "Ropa y compras"
   },
   {
@@ -321,7 +321,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 13.76,
-    "monto_crc": 7292.8,
+    "monto_usd": 13.76,
     "categoria": "Restaurantes"
   },
   {
@@ -334,7 +334,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 2.28,
-    "monto_crc": 1208.4,
+    "monto_usd": 2.28,
     "categoria": "Supermercado"
   },
   {
@@ -347,7 +347,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 12.4,
-    "monto_crc": 6572.0,
+    "monto_usd": 12.4,
     "categoria": "Supermercado"
   },
   {
@@ -360,7 +360,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 15.78,
-    "monto_crc": 8363.4,
+    "monto_usd": 15.78,
     "categoria": "Supermercado"
   },
   {
@@ -373,7 +373,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 14.01,
-    "monto_crc": 7425.3,
+    "monto_usd": 14.01,
     "categoria": "Transporte"
   },
   {
@@ -386,7 +386,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 4.56,
-    "monto_crc": 2416.8,
+    "monto_usd": 4.56,
     "categoria": "Viajes"
   },
   {
@@ -399,7 +399,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 18.3,
-    "monto_crc": 9699.0,
+    "monto_usd": 18.3,
     "categoria": "Supermercado"
   },
   {
@@ -412,7 +412,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 53.87,
-    "monto_crc": 28551.1,
+    "monto_usd": 53.87,
     "categoria": "Supermercado"
   },
   {
@@ -425,7 +425,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 8.91,
-    "monto_crc": 4722.3,
+    "monto_usd": 8.91,
     "categoria": "Supermercado"
   },
   {
@@ -438,7 +438,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 14.2,
-    "monto_crc": 7526.0,
+    "monto_usd": 14.2,
     "categoria": "Supermercado"
   },
   {
@@ -451,7 +451,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 3.41,
-    "monto_crc": 1807.3,
+    "monto_usd": 3.41,
     "categoria": "Otros"
   },
   {
@@ -464,7 +464,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 67.37,
-    "monto_crc": 35706.1,
+    "monto_usd": 67.37,
     "categoria": "Belleza y personal"
   },
   {
@@ -477,7 +477,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": -27.92,
-    "monto_crc": -14797.6,
+    "monto_usd": -27.92,
     "categoria": "Entretenimiento"
   },
   {
@@ -490,7 +490,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 11.39,
-    "monto_crc": 6036.7,
+    "monto_usd": 11.39,
     "categoria": "Supermercado"
   },
   {
@@ -503,7 +503,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 8.5,
-    "monto_crc": 4505.0,
+    "monto_usd": 8.5,
     "categoria": "Supermercado"
   },
   {
@@ -516,7 +516,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 22.94,
-    "monto_crc": 12158.2,
+    "monto_usd": 22.94,
     "categoria": "Supermercado"
   },
   {
@@ -529,7 +529,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 23.23,
-    "monto_crc": 12311.9,
+    "monto_usd": 23.23,
     "categoria": "Supermercado"
   },
   {
@@ -542,7 +542,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 11.48,
-    "monto_crc": 6084.4,
+    "monto_usd": 11.48,
     "categoria": "Restaurantes"
   },
   {
@@ -555,7 +555,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 12.64,
-    "monto_crc": 6699.2,
+    "monto_usd": 12.64,
     "categoria": "Restaurantes"
   },
   {
@@ -568,7 +568,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 21.98,
-    "monto_crc": 11649.4,
+    "monto_usd": 21.98,
     "categoria": "Supermercado"
   },
   {
@@ -581,7 +581,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 97.21,
-    "monto_crc": 51521.3,
+    "monto_usd": 97.21,
     "categoria": "Supermercado"
   },
   {
@@ -594,7 +594,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 10.25,
-    "monto_crc": 5432.5,
+    "monto_usd": 10.25,
     "categoria": "Supermercado"
   },
   {
@@ -607,7 +607,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 3.56,
-    "monto_crc": 1886.8,
+    "monto_usd": 3.56,
     "categoria": "Supermercado"
   },
   {
@@ -620,7 +620,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 52.64,
-    "monto_crc": 27899.2,
+    "monto_usd": 52.64,
     "categoria": "Restaurantes"
   },
   {
@@ -633,7 +633,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 12.83,
-    "monto_crc": 6799.9,
+    "monto_usd": 12.83,
     "categoria": "Restaurantes"
   },
   {
@@ -646,7 +646,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 5.31,
-    "monto_crc": 2814.3,
+    "monto_usd": 5.31,
     "categoria": "Restaurantes"
   },
   {
@@ -659,7 +659,7 @@
     "lugar": "Alemania",
     "moneda": "USD",
     "monto": 5.31,
-    "monto_crc": 2814.3,
+    "monto_usd": 5.31,
     "categoria": "Restaurantes"
   },
   {
@@ -672,7 +672,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 11.65,
-    "monto_crc": 6174.5,
+    "monto_usd": 11.65,
     "categoria": "Restaurantes"
   },
   {
@@ -685,7 +685,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 1545.0,
-    "monto_crc": 1545.0,
+    "monto_usd": 3.47,
     "categoria": "Supermercado"
   },
   {
@@ -698,7 +698,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 2050.0,
-    "monto_crc": 2050.0,
+    "monto_usd": 4.61,
     "categoria": "Ropa y compras"
   },
   {
@@ -711,7 +711,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 3000.0,
-    "monto_crc": 3000.0,
+    "monto_usd": 6.74,
     "categoria": "Ropa y compras"
   },
   {
@@ -724,7 +724,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 8900.0,
-    "monto_crc": 8900.0,
+    "monto_usd": 20.0,
     "categoria": "Restaurantes"
   },
   {
@@ -737,7 +737,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 9.1,
-    "monto_crc": 4823.0,
+    "monto_usd": 9.1,
     "categoria": "Transporte"
   },
   {
@@ -750,7 +750,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 9200.0,
-    "monto_crc": 9200.0,
+    "monto_usd": 20.67,
     "categoria": "Otros"
   },
   {
@@ -763,7 +763,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 51.74,
-    "monto_crc": 27422.2,
+    "monto_usd": 51.74,
     "categoria": "Transporte"
   },
   {
@@ -776,7 +776,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 12.64,
-    "monto_crc": 6699.2,
+    "monto_usd": 12.64,
     "categoria": "Transporte"
   },
   {
@@ -789,7 +789,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 32078.0,
-    "monto_crc": 32078.0,
+    "monto_usd": 72.09,
     "categoria": "Transporte"
   },
   {
@@ -802,7 +802,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 28702.0,
-    "monto_crc": 28702.0,
+    "monto_usd": 64.5,
     "categoria": "Restaurantes"
   },
   {
@@ -815,7 +815,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 10400.0,
-    "monto_crc": 10400.0,
+    "monto_usd": 23.37,
     "categoria": "Ropa y compras"
   },
   {
@@ -828,7 +828,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 29030.0,
-    "monto_crc": 29030.0,
+    "monto_usd": 65.24,
     "categoria": "Hogar"
   },
   {
@@ -841,7 +841,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 39065.0,
-    "monto_crc": 39065.0,
+    "monto_usd": 87.79,
     "categoria": "Hogar"
   },
   {
@@ -854,7 +854,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 36980.0,
-    "monto_crc": 36980.0,
+    "monto_usd": 83.1,
     "categoria": "Ropa y compras"
   },
   {
@@ -867,7 +867,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 37400.0,
-    "monto_crc": 37400.0,
+    "monto_usd": 84.04,
     "categoria": "Ropa y compras"
   },
   {
@@ -880,7 +880,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 11999.99,
-    "monto_crc": 11999.99,
+    "monto_usd": 26.97,
     "categoria": "Servicios"
   },
   {
@@ -893,7 +893,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 17775.0,
-    "monto_crc": 17775.0,
+    "monto_usd": 39.94,
     "categoria": "Restaurantes"
   },
   {
@@ -906,7 +906,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 1500.0,
-    "monto_crc": 1500.0,
+    "monto_usd": 3.37,
     "categoria": "Ropa y compras"
   },
   {
@@ -919,7 +919,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 32000.0,
-    "monto_crc": 32000.0,
+    "monto_usd": 71.91,
     "categoria": "Otros"
   },
   {
@@ -932,7 +932,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 20421.0,
-    "monto_crc": 20421.0,
+    "monto_usd": 45.89,
     "categoria": "Ropa y compras"
   },
   {
@@ -945,7 +945,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 7.97,
-    "monto_crc": 4224.1,
+    "monto_usd": 7.97,
     "categoria": "Transporte"
   },
   {
@@ -958,7 +958,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 9.1,
-    "monto_crc": 4823.0,
+    "monto_usd": 9.1,
     "categoria": "Transporte"
   },
   {
@@ -971,7 +971,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 1090.0,
-    "monto_crc": 1090.0,
+    "monto_usd": 2.45,
     "categoria": "Suscripciones"
   },
   {
@@ -984,7 +984,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 16800.0,
-    "monto_crc": 16800.0,
+    "monto_usd": 37.75,
     "categoria": "Viajes"
   },
   {
@@ -997,7 +997,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 1.6,
-    "monto_crc": 848.0,
+    "monto_usd": 1.6,
     "categoria": "Transporte"
   },
   {
@@ -1010,7 +1010,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 150000.0,
-    "monto_crc": 150000.0,
+    "monto_usd": 337.08,
     "categoria": "Salud"
   },
   {
@@ -1023,7 +1023,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 9450.0,
-    "monto_crc": 9450.0,
+    "monto_usd": 21.24,
     "categoria": "Restaurantes"
   },
   {
@@ -1036,7 +1036,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 33994.0,
-    "monto_crc": 33994.0,
+    "monto_usd": 76.39,
     "categoria": "Supermercado"
   },
   {
@@ -1049,7 +1049,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 2000.0,
-    "monto_crc": 2000.0,
+    "monto_usd": 4.49,
     "categoria": "Otros"
   },
   {
@@ -1062,7 +1062,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 800.0,
-    "monto_crc": 800.0,
+    "monto_usd": 1.8,
     "categoria": "Otros"
   },
   {
@@ -1075,7 +1075,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 2940.0,
-    "monto_crc": 2940.0,
+    "monto_usd": 6.61,
     "categoria": "Restaurantes"
   },
   {
@@ -1088,7 +1088,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 25000.0,
-    "monto_crc": 25000.0,
+    "monto_usd": 56.18,
     "categoria": "Belleza y personal"
   },
   {
@@ -1101,7 +1101,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 1650.0,
-    "monto_crc": 1650.0,
+    "monto_usd": 3.71,
     "categoria": "Transporte"
   },
   {
@@ -1114,7 +1114,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 8000.0,
-    "monto_crc": 8000.0,
+    "monto_usd": 17.98,
     "categoria": "Restaurantes"
   },
   {
@@ -1127,7 +1127,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 82000.0,
-    "monto_crc": 82000.0,
+    "monto_usd": 184.27,
     "categoria": "Restaurantes"
   },
   {
@@ -1140,7 +1140,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 18652.0,
-    "monto_crc": 18652.0,
+    "monto_usd": 41.91,
     "categoria": "Ropa y compras"
   },
   {
@@ -1153,7 +1153,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 3550.0,
-    "monto_crc": 3550.0,
+    "monto_usd": 7.98,
     "categoria": "Otros"
   },
   {
@@ -1166,7 +1166,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 4750.0,
-    "monto_crc": 4750.0,
+    "monto_usd": 10.67,
     "categoria": "Restaurantes"
   },
   {
@@ -1179,7 +1179,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 49500.0,
-    "monto_crc": 49500.0,
+    "monto_usd": 111.24,
     "categoria": "Hogar"
   },
   {
@@ -1192,7 +1192,7 @@
     "lugar": "Estados Unidos",
     "moneda": "USD",
     "monto": 17.99,
-    "monto_crc": 9534.7,
+    "monto_usd": 17.99,
     "categoria": "Suscripciones"
   },
   {
@@ -1205,7 +1205,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 21667.0,
-    "monto_crc": 21667.0,
+    "monto_usd": 48.69,
     "categoria": "Otros"
   },
   {
@@ -1218,7 +1218,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 51570.0,
-    "monto_crc": 51570.0,
+    "monto_usd": 115.89,
     "categoria": "Otros"
   },
   {
@@ -1231,7 +1231,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 7100.0,
-    "monto_crc": 7100.0,
+    "monto_usd": 15.96,
     "categoria": "Ropa y compras"
   },
   {
@@ -1244,7 +1244,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 14700.0,
-    "monto_crc": 14700.0,
+    "monto_usd": 33.03,
     "categoria": "Ropa y compras"
   },
   {
@@ -1257,7 +1257,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 31294.71,
-    "monto_crc": 31294.71,
+    "monto_usd": 70.33,
     "categoria": "Salud"
   },
   {
@@ -1270,7 +1270,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 29250.0,
-    "monto_crc": 29250.0,
+    "monto_usd": 65.73,
     "categoria": "Salud"
   },
   {
@@ -1283,7 +1283,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 8750.0,
-    "monto_crc": 8750.0,
+    "monto_usd": 19.66,
     "categoria": "Restaurantes"
   },
   {
@@ -1296,7 +1296,7 @@
     "lugar": "Estados Unidos",
     "moneda": "USD",
     "monto": 7.61,
-    "monto_crc": 4033.3,
+    "monto_usd": 7.61,
     "categoria": "Suscripciones"
   },
   {
@@ -1309,7 +1309,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 11999.99,
-    "monto_crc": 11999.99,
+    "monto_usd": 26.97,
     "categoria": "Servicios"
   },
   {
@@ -1322,7 +1322,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 36305.0,
-    "monto_crc": 36305.0,
+    "monto_usd": 81.58,
     "categoria": "Supermercado"
   },
   {
@@ -1335,7 +1335,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 9930.0,
-    "monto_crc": 9930.0,
+    "monto_usd": 22.31,
     "categoria": "Restaurantes"
   },
   {
@@ -1348,7 +1348,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 19379.25,
-    "monto_crc": 19379.25,
+    "monto_usd": 43.55,
     "categoria": "Supermercado"
   },
   {
@@ -1361,7 +1361,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 35321.0,
-    "monto_crc": 35321.0,
+    "monto_usd": 79.37,
     "categoria": "Supermercado"
   },
   {
@@ -1374,7 +1374,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 2750.0,
-    "monto_crc": 2750.0,
+    "monto_usd": 6.18,
     "categoria": "Otros"
   },
   {
@@ -1387,7 +1387,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 5430.0,
-    "monto_crc": 5430.0,
+    "monto_usd": 12.2,
     "categoria": "Restaurantes"
   },
   {
@@ -1400,7 +1400,7 @@
     "lugar": "Estados Unidos",
     "moneda": "USD",
     "monto": 9.78,
-    "monto_crc": 5183.4,
+    "monto_usd": 9.78,
     "categoria": "Suscripciones"
   },
   {
@@ -1413,7 +1413,7 @@
     "lugar": null,
     "moneda": "USD",
     "monto": 5.58,
-    "monto_crc": 2957.4,
+    "monto_usd": 5.58,
     "categoria": "Transporte"
   },
   {
@@ -1426,7 +1426,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 3740.0,
-    "monto_crc": 3740.0,
+    "monto_usd": 8.4,
     "categoria": "Restaurantes"
   },
   {
@@ -1439,7 +1439,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 6490.0,
-    "monto_crc": 6490.0,
+    "monto_usd": 14.58,
     "categoria": "Salud"
   },
   {
@@ -1452,7 +1452,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 299.9,
-    "monto_crc": 299.9,
+    "monto_usd": 0.67,
     "categoria": "Transporte"
   },
   {
@@ -1465,7 +1465,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 61150.0,
-    "monto_crc": 61150.0,
+    "monto_usd": 137.42,
     "categoria": "Belleza y personal"
   },
   {
@@ -1478,7 +1478,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 17149.0,
-    "monto_crc": 17149.0,
+    "monto_usd": 38.54,
     "categoria": "Supermercado"
   },
   {
@@ -1491,7 +1491,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 7980.0,
-    "monto_crc": 7980.0,
+    "monto_usd": 17.93,
     "categoria": "Supermercado"
   },
   {
@@ -1504,7 +1504,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4160.0,
-    "monto_crc": 4160.0,
+    "monto_usd": 9.35,
     "categoria": "Supermercado"
   },
   {
@@ -1517,7 +1517,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 5200.0,
-    "monto_crc": 5200.0,
+    "monto_usd": 11.69,
     "categoria": "Restaurantes"
   },
   {
@@ -1530,7 +1530,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 3500.0,
-    "monto_crc": 3500.0,
+    "monto_usd": 7.87,
     "categoria": "Restaurantes"
   },
   {
@@ -1543,7 +1543,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 1400.0,
-    "monto_crc": 1400.0,
+    "monto_usd": 3.15,
     "categoria": "Restaurantes"
   },
   {
@@ -1556,7 +1556,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 5950.0,
-    "monto_crc": 5950.0,
+    "monto_usd": 13.37,
     "categoria": "Restaurantes"
   },
   {
@@ -1569,7 +1569,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 8500.0,
-    "monto_crc": 8500.0,
+    "monto_usd": 19.1,
     "categoria": "Restaurantes"
   },
   {
@@ -1582,7 +1582,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 8150.0,
-    "monto_crc": 8150.0,
+    "monto_usd": 18.31,
     "categoria": "Restaurantes"
   },
   {
@@ -1595,7 +1595,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 3000.0,
-    "monto_crc": 3000.0,
+    "monto_usd": 6.74,
     "categoria": "Supermercado"
   },
   {
@@ -1608,7 +1608,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 3800.0,
-    "monto_crc": 3800.0,
+    "monto_usd": 8.54,
     "categoria": "Restaurantes"
   },
   {
@@ -1621,7 +1621,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 1400.0,
-    "monto_crc": 1400.0,
+    "monto_usd": 3.15,
     "categoria": "Restaurantes"
   },
   {
@@ -1634,7 +1634,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4160.0,
-    "monto_crc": 4160.0,
+    "monto_usd": 9.35,
     "categoria": "Supermercado"
   },
   {
@@ -1647,7 +1647,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 13500.0,
-    "monto_crc": 13500.0,
+    "monto_usd": 30.34,
     "categoria": "Otros"
   },
   {
@@ -1660,7 +1660,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 2970.0,
-    "monto_crc": 2970.0,
+    "monto_usd": 6.67,
     "categoria": "Supermercado"
   },
   {
@@ -1673,7 +1673,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 1400.0,
-    "monto_crc": 1400.0,
+    "monto_usd": 3.15,
     "categoria": "Restaurantes"
   },
   {
@@ -1686,7 +1686,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 15400.0,
-    "monto_crc": 15400.0,
+    "monto_usd": 34.61,
     "categoria": "Salud"
   },
   {
@@ -1699,7 +1699,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4215.0,
-    "monto_crc": 4215.0,
+    "monto_usd": 9.47,
     "categoria": "Supermercado"
   },
   {
@@ -1712,7 +1712,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 1600.0,
-    "monto_crc": 1600.0,
+    "monto_usd": 3.6,
     "categoria": "Restaurantes"
   },
   {
@@ -1725,7 +1725,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 14910.0,
-    "monto_crc": 14910.0,
+    "monto_usd": 33.51,
     "categoria": "Supermercado"
   },
   {
@@ -1738,7 +1738,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4900.0,
-    "monto_crc": 4900.0,
+    "monto_usd": 11.01,
     "categoria": "Restaurantes"
   },
   {
@@ -1751,7 +1751,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 1400.0,
-    "monto_crc": 1400.0,
+    "monto_usd": 3.15,
     "categoria": "Restaurantes"
   },
   {
@@ -1764,7 +1764,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4900.0,
-    "monto_crc": 4900.0,
+    "monto_usd": 11.01,
     "categoria": "Restaurantes"
   },
   {
@@ -1777,7 +1777,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 1610.0,
-    "monto_crc": 1610.0,
+    "monto_usd": 3.62,
     "categoria": "Supermercado"
   },
   {
@@ -1790,7 +1790,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 1400.0,
-    "monto_crc": 1400.0,
+    "monto_usd": 3.15,
     "categoria": "Restaurantes"
   },
   {
@@ -1803,7 +1803,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 1500.0,
-    "monto_crc": 1500.0,
+    "monto_usd": 3.37,
     "categoria": "Otros"
   },
   {
@@ -1816,7 +1816,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 2910.0,
-    "monto_crc": 2910.0,
+    "monto_usd": 6.54,
     "categoria": "Supermercado"
   },
   {
@@ -1829,7 +1829,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 9495.0,
-    "monto_crc": 9495.0,
+    "monto_usd": 21.34,
     "categoria": "Supermercado"
   },
   {
@@ -1842,7 +1842,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 6600.0,
-    "monto_crc": 6600.0,
+    "monto_usd": 14.83,
     "categoria": "Restaurantes"
   },
   {
@@ -1855,7 +1855,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 67500.0,
-    "monto_crc": 67500.0,
+    "monto_usd": 151.69,
     "categoria": "Salud"
   },
   {
@@ -1868,7 +1868,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 5450.0,
-    "monto_crc": 5450.0,
+    "monto_usd": 12.25,
     "categoria": "Restaurantes"
   },
   {
@@ -1881,7 +1881,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4800.0,
-    "monto_crc": 4800.0,
+    "monto_usd": 10.79,
     "categoria": "Restaurantes"
   },
   {
@@ -1894,7 +1894,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 29738.0,
-    "monto_crc": 29738.0,
+    "monto_usd": 66.83,
     "categoria": "Otros"
   },
   {
@@ -1907,7 +1907,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 8800.0,
-    "monto_crc": 8800.0,
+    "monto_usd": 19.78,
     "categoria": "Restaurantes"
   },
   {
@@ -1920,7 +1920,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 46500.0,
-    "monto_crc": 46500.0,
+    "monto_usd": 104.49,
     "categoria": "Restaurantes"
   },
   {
@@ -1933,7 +1933,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4555.0,
-    "monto_crc": 4555.0,
+    "monto_usd": 10.24,
     "categoria": "Restaurantes"
   },
   {
@@ -1946,7 +1946,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 5990.0,
-    "monto_crc": 5990.0,
+    "monto_usd": 13.46,
     "categoria": "Restaurantes"
   },
   {
@@ -1959,7 +1959,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 35000.0,
-    "monto_crc": 35000.0,
+    "monto_usd": 78.65,
     "categoria": "Hogar"
   },
   {
@@ -1972,7 +1972,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 3730.0,
-    "monto_crc": 3730.0,
+    "monto_usd": 8.38,
     "categoria": "Restaurantes"
   },
   {
@@ -1985,7 +1985,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4400.0,
-    "monto_crc": 4400.0,
+    "monto_usd": 9.89,
     "categoria": "Transporte"
   },
   {
@@ -1998,7 +1998,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 11667.0,
-    "monto_crc": 11667.0,
+    "monto_usd": 26.22,
     "categoria": "Restaurantes"
   },
   {
@@ -2011,7 +2011,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 27029.0,
-    "monto_crc": 27029.0,
+    "monto_usd": 60.74,
     "categoria": "Servicios"
   },
   {
@@ -2024,7 +2024,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 24300.0,
-    "monto_crc": 24300.0,
+    "monto_usd": 54.61,
     "categoria": "Restaurantes"
   },
   {
@@ -2037,7 +2037,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 62115.31,
-    "monto_crc": 62115.31,
+    "monto_usd": 139.58,
     "categoria": "Supermercado"
   },
   {
@@ -2050,7 +2050,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 10450.0,
-    "monto_crc": 10450.0,
+    "monto_usd": 23.48,
     "categoria": "Ropa y compras"
   },
   {
@@ -2063,7 +2063,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 18829.0,
-    "monto_crc": 18829.0,
+    "monto_usd": 42.31,
     "categoria": "Otros"
   },
   {
@@ -2076,7 +2076,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4490.0,
-    "monto_crc": 4490.0,
+    "monto_usd": 10.09,
     "categoria": "Transporte"
   },
   {
@@ -2089,7 +2089,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 740.0,
-    "monto_crc": 740.0,
+    "monto_usd": 1.66,
     "categoria": "Supermercado"
   },
   {
@@ -2102,7 +2102,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 33990.0,
-    "monto_crc": 33990.0,
+    "monto_usd": 76.38,
     "categoria": "Ropa y compras"
   },
   {
@@ -2115,7 +2115,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 3355.0,
-    "monto_crc": 3355.0,
+    "monto_usd": 7.54,
     "categoria": "Restaurantes"
   },
   {
@@ -2128,7 +2128,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 38719.1,
-    "monto_crc": 38719.1,
+    "monto_usd": 87.01,
     "categoria": "Servicios"
   },
   {
@@ -2141,7 +2141,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 900.0,
-    "monto_crc": 900.0,
+    "monto_usd": 2.02,
     "categoria": "Restaurantes"
   },
   {
@@ -2154,7 +2154,7 @@
     "lugar": "Estados Unidos",
     "moneda": "USD",
     "monto": 59.99,
-    "monto_crc": 31794.7,
+    "monto_usd": 59.99,
     "categoria": "Ropa y compras"
   },
   {
@@ -2167,7 +2167,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 2790.0,
-    "monto_crc": 2790.0,
+    "monto_usd": 6.27,
     "categoria": "Transporte"
   },
   {
@@ -2180,7 +2180,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 7590.0,
-    "monto_crc": 7590.0,
+    "monto_usd": 17.06,
     "categoria": "Transporte"
   },
   {
@@ -2193,7 +2193,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4523.22,
-    "monto_crc": 4523.22,
+    "monto_usd": 10.16,
     "categoria": "Transporte"
   },
   {
@@ -2206,7 +2206,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 2380.0,
-    "monto_crc": 2380.0,
+    "monto_usd": 5.35,
     "categoria": "Supermercado"
   },
   {
@@ -2219,7 +2219,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 3090.0,
-    "monto_crc": 3090.0,
+    "monto_usd": 6.94,
     "categoria": "Otros"
   },
   {
@@ -2232,7 +2232,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 5800.0,
-    "monto_crc": 5800.0,
+    "monto_usd": 13.03,
     "categoria": "Restaurantes"
   },
   {
@@ -2245,7 +2245,7 @@
     "lugar": "Costa Rica",
     "moneda": "USD",
     "monto": 33.1,
-    "monto_crc": 17543.0,
+    "monto_usd": 33.1,
     "categoria": "Ropa y compras"
   },
   {
@@ -2258,7 +2258,7 @@
     "lugar": "Costa Rica",
     "moneda": "USD",
     "monto": 8.21,
-    "monto_crc": 4351.3,
+    "monto_usd": 8.21,
     "categoria": "Ropa y compras"
   },
   {
@@ -2271,7 +2271,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 16570.0,
-    "monto_crc": 16570.0,
+    "monto_usd": 37.24,
     "categoria": "Servicios"
   },
   {
@@ -2284,7 +2284,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4690.0,
-    "monto_crc": 4690.0,
+    "monto_usd": 10.54,
     "categoria": "Transporte"
   },
   {
@@ -2297,7 +2297,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 17300.0,
-    "monto_crc": 17300.0,
+    "monto_usd": 38.88,
     "categoria": "Restaurantes"
   },
   {
@@ -2310,7 +2310,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 150000.0,
-    "monto_crc": 150000.0,
+    "monto_usd": 337.08,
     "categoria": "Salud"
   },
   {
@@ -2323,7 +2323,7 @@
     "lugar": "Países Bajos",
     "moneda": "CRC",
     "monto": 3990.0,
-    "monto_crc": 3990.0,
+    "monto_usd": 8.97,
     "categoria": "Transporte"
   },
   {
@@ -2336,7 +2336,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 6300.0,
-    "monto_crc": 6300.0,
+    "monto_usd": 14.16,
     "categoria": "Restaurantes"
   },
   {
@@ -2349,7 +2349,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4390.0,
-    "monto_crc": 4390.0,
+    "monto_usd": 9.87,
     "categoria": "Transporte"
   },
   {
@@ -2362,7 +2362,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4335.0,
-    "monto_crc": 4335.0,
+    "monto_usd": 9.74,
     "categoria": "Supermercado"
   },
   {
@@ -2375,7 +2375,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 41786.0,
-    "monto_crc": 41786.0,
+    "monto_usd": 93.9,
     "categoria": "Servicios"
   },
   {
@@ -2388,7 +2388,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 5190.0,
-    "monto_crc": 5190.0,
+    "monto_usd": 11.66,
     "categoria": "Transporte"
   },
   {
@@ -2401,7 +2401,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 3730.0,
-    "monto_crc": 3730.0,
+    "monto_usd": 8.38,
     "categoria": "Restaurantes"
   },
   {
@@ -2414,7 +2414,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 1600.0,
-    "monto_crc": 1600.0,
+    "monto_usd": 3.6,
     "categoria": "Restaurantes"
   },
   {
@@ -2427,7 +2427,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 3290.0,
-    "monto_crc": 3290.0,
+    "monto_usd": 7.39,
     "categoria": "Otros"
   },
   {
@@ -2440,7 +2440,7 @@
     "lugar": null,
     "moneda": "CRC",
     "monto": 18931.0,
-    "monto_crc": 18931.0,
+    "monto_usd": 42.54,
     "categoria": "Restaurantes"
   },
   {
@@ -2453,7 +2453,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 6500.0,
-    "monto_crc": 6500.0,
+    "monto_usd": 14.61,
     "categoria": "Restaurantes"
   },
   {
@@ -2466,7 +2466,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 4700.0,
-    "monto_crc": 4700.0,
+    "monto_usd": 10.56,
     "categoria": "Transporte"
   },
   {
@@ -2479,7 +2479,7 @@
     "lugar": "Hong Kong",
     "moneda": "USD",
     "monto": 5.3,
-    "monto_crc": 2809.0,
+    "monto_usd": 5.3,
     "categoria": "Suscripciones"
   },
   {
@@ -2492,7 +2492,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 1835.0,
-    "monto_crc": 1835.0,
+    "monto_usd": 4.12,
     "categoria": "Supermercado"
   },
   {
@@ -2505,7 +2505,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 700.0,
-    "monto_crc": 700.0,
+    "monto_usd": 1.57,
     "categoria": "Supermercado"
   },
   {
@@ -2518,7 +2518,7 @@
     "lugar": "Costa Rica",
     "moneda": "CRC",
     "monto": 11000.0,
-    "monto_crc": 11000.0,
+    "monto_usd": 24.72,
     "categoria": "Restaurantes"
   }
 ]
