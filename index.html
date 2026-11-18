@@ -8,6 +8,11 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="parser.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
 <script>
 tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui','sans-serif'] } } } };
 </script>
@@ -31,6 +36,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
       <label class="text-sm text-slate-400">Mes</label>
       <select id="mesSel" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none"></select>
       <button id="fuenteBtn" class="text-xs px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400"></button>
+      <button id="subirBtn" class="text-sm px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium">Subir estado de cuenta</button>
     </div>
   </header>
 
@@ -96,6 +102,49 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
   <footer class="text-center text-xs text-slate-600 mt-8 pb-4">
     Finanzas_NZ · datos desde Firebase Firestore (proyecto <span id="projId"></span>) · montos en USD · CRC→USD ¢<span id="tasaLabel"></span> · EUR→USD $<span id="tasaEurLabel"></span>
   </footer>
+</div>
+
+<!-- Modal: subir estado de cuenta -->
+<div id="subirModal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/70" onclick="cerrarSubir()"></div>
+  <div class="relative max-w-4xl mx-auto mt-8 bg-[#111a2e] border border-slate-700 rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-white">Subir estado de cuenta</h2>
+      <button onclick="cerrarSubir()" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
+    </div>
+
+    <div id="subirDrop" class="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-500 transition">
+      <p class="text-slate-300">Arrastrá el PDF del estado de cuenta acá, o hacé clic para elegirlo.</p>
+      <p class="text-xs text-slate-500 mt-2">Formato BAC Credomatic · se procesa en tu navegador, no se envía a ningún servidor.</p>
+      <input type="file" id="subirFile" accept=".pdf,application/pdf" class="hidden">
+    </div>
+
+    <div id="subirStatus" class="text-sm text-slate-300 mt-4"></div>
+
+    <div id="subirReview" class="hidden mt-4">
+      <div id="subirResumen" class="text-sm text-slate-300 mb-3"></div>
+      <div class="overflow-x-auto max-h-[50vh] overflow-y-auto border border-slate-800 rounded-lg">
+        <table class="w-full text-xs">
+          <thead class="sticky top-0 bg-[#111a2e]">
+            <tr class="text-left text-slate-500 uppercase border-b border-slate-700">
+              <th class="py-2 pr-2"></th>
+              <th class="py-2 pr-2">Fecha</th>
+              <th class="py-2 pr-2">Descripción</th>
+              <th class="py-2 pr-2">Persona</th>
+              <th class="py-2 pr-2">Categoría</th>
+              <th class="py-2 pr-2">Lugar</th>
+              <th class="py-2 text-right">Monto</th>
+            </tr>
+          </thead>
+          <tbody id="subirBody" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+      <div class="flex items-center gap-3 mt-4">
+        <button id="subirGuardar" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium">Guardar en Firestore</button>
+        <span id="subirResultado" class="text-sm"></span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -358,6 +407,162 @@ document.getElementById('mesSel').addEventListener('change', e => { mesActual = 
 document.getElementById('filtroPersona').addEventListener('change', renderTabla);
 document.getElementById('filtroCategoria').addEventListener('change', renderTabla);
 document.getElementById('filtroTexto').addEventListener('input', renderTabla);
+
+// ─────────────────────── Subir estado de cuenta ───────────────────────
+let CONFIG = null;   // categorias.json (personas, categorias, tasas)
+let REVIEW = [];     // transacciones en revisión
+let PARSED = null;
+
+async function cargarConfig() {
+  if (CONFIG) return CONFIG;
+  try { CONFIG = await (await fetch('./config/categorias.json')).json(); }
+  catch (e) { CONFIG = { personas: {}, categorias: [], tasa_usd_crc: USD_CRC, tasa_eur_usd: EUR_USD }; }
+  return CONFIG;
+}
+
+function abrirSubir() { document.getElementById('subirModal').classList.remove('hidden'); }
+function cerrarSubir() { document.getElementById('subirModal').classList.add('hidden'); }
+document.getElementById('subirBtn').addEventListener('click', abrirSubir);
+
+const dropEl = document.getElementById('subirDrop');
+const fileEl = document.getElementById('subirFile');
+dropEl.addEventListener('click', () => fileEl.click());
+dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('border-emerald-500'); });
+dropEl.addEventListener('dragleave', () => dropEl.classList.remove('border-emerald-500'));
+dropEl.addEventListener('drop', e => { e.preventDefault(); dropEl.classList.remove('border-emerald-500'); if (e.dataTransfer.files.length) procesarArchivo(e.dataTransfer.files[0]); });
+fileEl.addEventListener('change', e => { if (e.target.files.length) procesarArchivo(e.target.files[0]); });
+
+async function extraerTextoPdf(buf) {
+  const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+  let out = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const tc = await page.getTextContent();
+    const items = tc.items.map(it => ({ str: it.str, x: it.transform[4], y: it.transform[5] })).sort((a, b) => (b.y - a.y) || (a.x - b.x));
+    const lines = [];
+    let cur = [items[0]?.str || ''], prevY = items[0]?.y;
+    for (let i = 1; i < items.length; i++) {
+      const it = items[i];
+      if (Math.abs(it.y - prevY) > 3) { lines.push(cur.join(' ')); cur = [it.str]; } else { cur.push(it.str); }
+      prevY = it.y;
+    }
+    if (cur.length) lines.push(cur.join(' '));
+    out = out.concat(lines);
+  }
+  return out.join('\n');
+}
+
+async function procesarArchivo(file) {
+  const status = document.getElementById('subirStatus');
+  const cfg = await cargarConfig();
+  status.textContent = 'Procesando ' + file.name + '…';
+  document.getElementById('subirReview').classList.add('hidden');
+  try {
+    const buf = await file.arrayBuffer();
+    const text = await extraerTextoPdf(buf);
+    const res = FinanzasParser.parseBacFromPdfjs(text, cfg);
+    PARSED = res;
+    REVIEW = res.transacciones.map((t, i) => ({ ...t, _idx: i, _include: true }));
+    status.textContent = '';
+    mostrarReview();
+  } catch (e) {
+    status.textContent = 'Error al procesar: ' + e.message;
+  }
+}
+
+function mostrarReview() {
+  const review = document.getElementById('subirReview');
+  const resumen = document.getElementById('subirResumen');
+  const body = document.getElementById('subirBody');
+  const cfg = CONFIG;
+  review.classList.remove('hidden');
+
+  let crc = 0, usd = 0, eur = 0;
+  for (const t of REVIEW) {
+    if (t.moneda === 'CRC') crc += t.monto || 0;
+    else if (t.moneda === 'USD') usd += t.monto || 0;
+    else eur += t.monto || 0;
+  }
+  const personas = {};
+  for (const t of REVIEW) personas[t.persona] = (personas[t.persona] || 0) + 1;
+
+  resumen.innerHTML =
+    '<b>' + REVIEW.length + '</b> transacciones detectadas' +
+    (PARSED && PARSED.noReconocidas ? ' · <span class="text-amber-400">' + PARSED.noReconocidas + ' líneas no reconocidas</span>' : '') +
+    ' · CRC nativo ¢' + crc.toLocaleString('es-CR') +
+    ' · USD nativo $' + usd.toLocaleString('en-US') +
+    (eur ? ' · EUR €' + eur.toLocaleString('es-CR') : '') +
+    '<div class="mt-1 text-xs text-slate-500">Por persona: ' + Object.entries(personas).map(([k, v]) => k + ' (' + v + ')').join(', ') + '</div>';
+
+  const personasList = Object.keys(cfg.personas || {});
+  const cats = (cfg.categorias || []).map(c => c.nombre);
+
+  body.innerHTML = REVIEW.map((t, i) => `
+    <tr class="${t._include ? '' : 'opacity-40'}">
+      <td class="py-1 pr-2"><input type="checkbox" ${t._include ? 'checked' : ''} onchange="toggleIncluir(${i}, this.checked)"></td>
+      <td class="py-1 pr-2 text-slate-400 whitespace-nowrap">${t.fecha || ''}</td>
+      <td class="py-1 pr-2 text-slate-300">${(t.descripcion || '').replace(/_/g, ' ')}</td>
+      <td class="py-1 pr-2">
+        <select onchange="REVIEW[${i}].persona=this.value" class="bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs">
+          ${personasList.map(p => `<option ${p === t.persona ? 'selected' : ''}>${p}</option>`).join('')}
+          ${!personasList.includes(t.persona) ? `<option selected>${t.persona}</option>` : ''}
+        </select>
+      </td>
+      <td class="py-1 pr-2">
+        <select onchange="REVIEW[${i}].categoria=this.value" class="bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs">
+          ${cats.map(c => `<option ${c === t.categoria ? 'selected' : ''}>${c}</option>`).join('')}
+          ${!cats.includes(t.categoria) ? `<option selected>${t.categoria}</option>` : ''}
+        </select>
+      </td>
+      <td class="py-1 pr-2 text-xs text-slate-500">${t.lugar || ''}</td>
+      <td class="py-1 text-right whitespace-nowrap ${(t.monto || 0) < 0 ? 'text-emerald-400' : 'text-slate-200'}">${money2(t.monto_usd)}</td>
+    </tr>`).join('');
+}
+
+window.toggleIncluir = (i, val) => { REVIEW[i]._include = val; };
+
+async function sha256hex(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 20);
+}
+
+document.getElementById('subirGuardar').addEventListener('click', async () => {
+  const resEl = document.getElementById('subirResultado');
+  const incluidas = REVIEW.filter(t => t._include);
+  if (!incluidas.length) { resEl.textContent = 'No hay transacciones seleccionadas.'; return; }
+  if (!firebase.apps.length) { resEl.textContent = 'Firebase no disponible.'; return; }
+  resEl.textContent = 'Guardando…';
+  try {
+    const db = firebase.firestore();
+    let batch = db.batch();
+    let ops = 0;
+    for (const t of incluidas) {
+      const key = [t.tarjeta, t.referencia, t.fecha, t.descripcion, t.moneda, t.monto, t._idx].join('|');
+      const id = await sha256hex(key);
+      const { _include, _idx, ...data } = t;
+      batch.set(db.collection('transacciones').doc(id), data);
+      ops++;
+      if (ops % 450 === 0) { await batch.commit(); batch = db.batch(); }
+    }
+    if (ops % 450 !== 0) await batch.commit();
+    resEl.textContent = '✔ ' + ops + ' transacciones guardadas.';
+    resEl.className = 'text-sm text-emerald-400';
+    await recargarTx();
+  } catch (e) {
+    resEl.textContent = 'Error al guardar: ' + e.message;
+    resEl.className = 'text-sm text-rose-400';
+  }
+});
+
+async function recargarTx() {
+  if (!firebase.apps.length) return;
+  const snap = await firebase.firestore().collection('transacciones').get();
+  if (!snap.empty) { TX = snap.docs.map(d => d.data()); fuente = 'firestore'; }
+  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort().reverse();
+  if (meses.length) mesActual = meses[0];
+  await cargarPresupuesto();
+  render();
+}
 
 cargarDatos();
 </script>

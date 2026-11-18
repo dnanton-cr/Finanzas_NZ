@@ -30,7 +30,7 @@ def doc_id(t: dict, idx: int) -> str:
     clave = "|".join(str(t.get(k, "")) for k in
                      ("tarjeta", "referencia", "fecha", "descripcion", "moneda", "monto"))
     clave += f"|{idx}"  # el índice distingue filas idénticas (p.ej. dos compras iguales el mismo día)
-    return hashlib.sha1(clave.encode("utf-8")).hexdigest()[:20]
+    return hashlib.sha256(clave.encode("utf-8")).hexdigest()[:20]
 
 
 def main():
