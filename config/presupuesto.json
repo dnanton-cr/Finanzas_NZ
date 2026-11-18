@@ -1,0 +1,25 @@
+{
+  "mes": "2026-11",
+  "total": 2000000,
+  "por_persona": {
+    "Daniel": 500000,
+    "Matías": 400000,
+    "Karin": 500000,
+    "Iker": 600000
+  },
+  "por_categoria": {
+    "Supermercado": 500000,
+    "Restaurantes": 250000,
+    "Transporte": 150000,
+    "Salud": 200000,
+    "Ropa y compras": 200000,
+    "Hogar": 150000,
+    "Suscripciones": 40000,
+    "Servicios": 150000,
+    "Viajes": 150000,
+    "Educación": 150000,
+    "Belleza y personal": 80000,
+    "Entretenimiento": 50000,
+    "Otros": 80000
+  }
+}

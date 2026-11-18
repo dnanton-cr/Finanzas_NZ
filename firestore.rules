@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ⚠️ PRIVACIDAD: estas reglas permiten LECTURA pública (cualquiera que
+    // conozca el projectId puede leer las transacciones). Es lo más simple
+    // para que el dashboard estático funcione sin login.
+    //
+    // La ESCRITURA está bloqueada: solo se escribe con la cuenta de servicio
+    // (el SDK de Admin ignora estas reglas), es decir, vía scripts/upload.py.
+    //
+    // Para cerrar la lectura, usa Firebase Auth (ver README.md):
+    //   allow read: if request.auth != null;
+    match /{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

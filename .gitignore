@@ -1,0 +1,14 @@
+# Cuenta de servicio de Firebase (¡NO subir!)
+*-service-account*.json
+*service-account*.json
+firebase-key.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Editor / SO
+.DS_Store
+node_modules/

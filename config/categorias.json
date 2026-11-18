@@ -1,0 +1,60 @@
+{
+  "personas": {
+    "9704": "Matías",
+    "9712": "Karin",
+    "4613": "Iker",
+    "6687": "Daniel"
+  },
+  "tasa_usd_crc": 530.0,
+  "categorias": [
+    {
+      "nombre": "Suscripciones",
+      "keywords": ["netflix", "google one", "digit*", "digital", "voozaa", "deepseer"]
+    },
+    {
+      "nombre": "Servicios",
+      "keywords": ["ice cargo", "i.c.e", "i. c. e", "ice paguelo", "cnfl", "a y a par", "aya par"]
+    },
+    {
+      "nombre": "Transporte",
+      "keywords": ["uber", "aral", "esso", "servicentro", "parqueo", "parquing"]
+    },
+    {
+      "nombre": "Salud",
+      "keywords": ["farmacia", "hospital", "dental", "dentales", "nutricion", "eudai", "jimenaco"]
+    },
+    {
+      "nombre": "Supermercado",
+      "keywords": ["auto mercado", "automercado", "fresh market", "pali ", " mxm", "mas x menos", "mayca", "corte fresco", "delta rho", "delta rhormoser", "perimercado", "6erimercado", "am pm", "mocapan", "lidl", "rewe", "aldi", "kaufland", "green center"]
+    },
+    {
+      "nombre": "Hogar",
+      "keywords": ["ferreteria epa", "epa sa", "imacenter", "centenario"]
+    },
+    {
+      "nombre": "Belleza y personal",
+      "keywords": ["salon", "drogerie", "sfida", "haarmanufaktur"]
+    },
+    {
+      "nombre": "Viajes",
+      "keywords": ["hostel", "hotel", "a&o", "luisiana"]
+    },
+    {
+      "nombre": "Educación",
+      "keywords": ["studierendenwerk"]
+    },
+    {
+      "nombre": "Entretenimiento",
+      "keywords": ["ticket.io", "cinema", "cine", "ticketmaster"]
+    },
+    {
+      "nombre": "Ropa y compras",
+      "keywords": ["shein", "vinted", "siman", "parfium", "parfois", "bath & body", "bath body", "mr tshirt", "tshirt", "pequeno mundo", "jose barguil", "barguil", "tienda productos", "santeria", "xpress box", "amazon", "amzn", "mktpl", "tshirt"]
+    },
+    {
+      "nombre": "Restaurantes",
+      "keywords": ["restaurant", "restaurante", "pub", "cafe", "coffee", "pizza", "mcdonald", "mc donald", "burger", "bk nova", "sanguich", "sushi", "shibuya", "sorbettiera", "delikatess", "yormas", "bang bang", "sumup", "gastro", "roku", "zinos", "applebees", "charles bbq", "porkis", "arroyo", "dorado", "antonino", "franco", "libertario", "molineda", "tetera", "raw juicery", "fito", "voro", "burga", "kriska", "ladipap", "zuu", "newrest", "mr pig", "giacomin", "sefa", "irish", "olaf", "kiosk", "veranito", "lalo crem", "grill and fresh", "grill fresh"]
+    }
+  ],
+  "otros_nombre": "Otros"
+}

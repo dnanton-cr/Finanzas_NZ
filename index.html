@@ -3,350 +3,362 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Finanzas NZ — Control de gastos familiares</title>
-<meta name="description" content="Dashboard de gastos familiares por persona, categoría y mes, con comparación contra presupuesto.">
+<title>Finanzas NZ — Familia Nantón Zapata</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui','sans-serif'] } } } };
+</script>
+<style>
+  body { background: #0b1220; }
+  .card { background: #111a2e; border: 1px solid #1f2a44; border-radius: 1rem; }
+  ::-webkit-scrollbar { height: 8px; width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #2a3a5c; border-radius: 4px; }
+</style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen" style="font-family: Inter, system-ui, sans-serif;">
+<body class="font-sans text-slate-200 antialiased">
+<div class="max-w-7xl mx-auto px-4 py-6">
 
-<!-- ============================================================
-     CONFIGURACIÓN — EDITA ESTO
-     ============================================================ -->
-<div class="max-w-7xl mx-auto p-4 md:p-6">
-
-  <header class="flex flex-wrap items-center justify-between gap-4 mb-6">
+  <!-- Encabezado -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
     <div>
-      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Finanzas <span class="text-emerald-400">NZ</span></h1>
-      <p class="text-slate-400 text-sm">Gastos por persona · categoría · mes · presupuesto</p>
+      <h1 class="text-2xl font-bold text-white">Finanzas NZ</h1>
+      <p class="text-sm text-slate-400">Familia Nantón Zapata · gastos por persona, categoría y mes</p>
     </div>
     <div class="flex items-center gap-3">
       <label class="text-sm text-slate-400">Mes</label>
-      <input type="month" id="mes-selector" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      <select id="mesSel" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none"></select>
+      <button id="fuenteBtn" class="text-xs px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400"></button>
     </div>
   </header>
 
   <!-- KPIs -->
-  <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <p class="text-slate-400 text-xs uppercase tracking-wide">Gastado (mes)</p>
-      <p class="text-2xl font-bold mt-1" id="kpi-gastado">—</p>
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="kpis"></section>
+
+  <!-- Gráficos -->
+  <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+    <div class="card p-5 lg:col-span-2">
+      <h2 class="text-sm font-semibold text-slate-300 mb-3">Gasto por categoría</h2>
+      <div class="h-64"><canvas id="chartCategorias"></canvas></div>
     </div>
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <p class="text-slate-400 text-xs uppercase tracking-wide">Presupuesto (mes)</p>
-      <p class="text-2xl font-bold mt-1" id="kpi-presupuesto">—</p>
-    </div>
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <p class="text-slate-400 text-xs uppercase tracking-wide">Disponible</p>
-      <p class="text-2xl font-bold mt-1" id="kpi-disponible">—</p>
-    </div>
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <p class="text-slate-400 text-xs uppercase tracking-wide">Transacciones</p>
-      <p class="text-2xl font-bold mt-1" id="kpi-count">—</p>
+    <div class="card p-5">
+      <h2 class="text-sm font-semibold text-slate-300 mb-3">Gasto por persona</h2>
+      <div class="h-64"><canvas id="chartPersonas"></canvas></div>
     </div>
   </section>
 
-  <!-- Charts -->
-  <section class="grid lg:grid-cols-2 gap-4 mb-6">
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <h2 class="font-semibold mb-3">Gastos por persona <span class="text-slate-500 font-normal text-sm" id="lbl-persona-mes"></span></h2>
-      <div class="h-64"><canvas id="chart-persona"></canvas></div>
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <div class="card p-5">
+      <h2 class="text-sm font-semibold text-slate-300 mb-3">Gasto vs. presupuesto por mes</h2>
+      <div class="h-56"><canvas id="chartMeses"></canvas></div>
     </div>
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <h2 class="font-semibold mb-3">Gastos por categoría <span class="text-slate-500 font-normal text-sm" id="lbl-cat-mes"></span></h2>
-      <div class="h-64"><canvas id="chart-categoria"></canvas></div>
-    </div>
-  </section>
-
-  <section class="mb-6">
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <h2 class="font-semibold mb-3">Gasto por mes (últimos 12 meses)</h2>
-      <div class="h-64"><canvas id="chart-mes"></canvas></div>
+    <div class="card p-5">
+      <h2 class="text-sm font-semibold text-slate-300 mb-3">Presupuesto por persona</h2>
+      <div id="presupuestoPersonas" class="space-y-3"></div>
     </div>
   </section>
 
-  <!-- Budget comparison -->
-  <section class="mb-6">
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <h2 class="font-semibold mb-4">Presupuesto vs. gasto por categoría</h2>
-      <div id="presupuesto-lista" class="space-y-3"></div>
-      <p id="presupuesto-vacio" class="text-slate-500 text-sm hidden">No hay presupuesto definido para este mes.</p>
-    </div>
+  <!-- Presupuesto por categoría -->
+  <section class="card p-5 mb-6">
+    <h2 class="text-sm font-semibold text-slate-300 mb-3">Presupuesto por categoría</h2>
+    <div id="presupuestoCategorias" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3"></div>
   </section>
 
-  <!-- Transactions table -->
-  <section>
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-        <h2 class="font-semibold">Movimientos</h2>
-        <div class="flex gap-2">
-          <select id="filtro-persona" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm">
-            <option value="">Todas las personas</option>
-          </select>
-          <select id="filtro-categoria" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm">
-            <option value="">Todas las categorías</option>
-          </select>
-        </div>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-left text-slate-400 border-b border-slate-800">
-              <th class="py-2 pr-4">Fecha</th>
-              <th class="py-2 pr-4">Descripción</th>
-              <th class="py-2 pr-4">Persona</th>
-              <th class="py-2 pr-4">Categoría</th>
-              <th class="py-2 text-right">Monto</th>
-            </tr>
-          </thead>
-          <tbody id="tabla-movimientos" class="divide-y divide-slate-800/60"></tbody>
-        </table>
+  <!-- Tabla -->
+  <section class="card p-5">
+    <div class="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+      <h2 class="text-sm font-semibold text-slate-300">Transacciones <span id="txCount" class="text-slate-500 font-normal"></span></h2>
+      <div class="flex flex-wrap gap-2 ml-auto">
+        <select id="filtroPersona" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs"></select>
+        <select id="filtroCategoria" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs"></select>
+        <input id="filtroTexto" placeholder="Buscar…" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs w-40">
       </div>
     </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-slate-500 text-xs uppercase tracking-wide border-b border-slate-700">
+            <th class="py-2 pr-3">Fecha</th>
+            <th class="py-2 pr-3">Persona</th>
+            <th class="py-2 pr-3">Descripción</th>
+            <th class="py-2 pr-3">Categoría</th>
+            <th class="py-2 pr-3">Lugar</th>
+            <th class="py-2 text-right">Monto</th>
+          </tr>
+        </thead>
+        <tbody id="txBody" class="divide-y divide-slate-800"></tbody>
+      </table>
+    </div>
   </section>
 
-  <footer class="text-center text-slate-600 text-xs mt-8 pb-6">
-    Finanzas NZ · datos en Firebase Firestore (proyecto <span class="text-slate-400">finanzasnz</span>)
+  <footer class="text-center text-xs text-slate-600 mt-8 pb-4">
+    Finanzas_NZ · datos desde Firebase Firestore (proyecto <span id="projId"></span>) · tipo de cambio USD→CRC: ¢<span id="tasaLabel"></span>
   </footer>
 </div>
 
 <script>
-/* ============================================================
-   CONFIGURACIÓN DE FIREBASE — reemplazá con tus valores reales.
-   Firebase Console → finanzasnz → Configuración del proyecto → Tus apps → Web.
-   For Firebase JS SDK v7.20.0 and later, measurementId is optional
-   ============================================================ */
-const firebaseConfig = {
+// ─────────────────────────── Configuración ───────────────────────────
+const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCHvRHg7Ok1lJmZjnsI56d9giSe9LXfNUo",
   authDomain: "finanzasnz-16d54.firebaseapp.com",
   projectId: "finanzasnz-16d54",
   storageBucket: "finanzasnz-16d54.firebasestorage.app",
   messagingSenderId: "397626969769",
-  appId: "1:397626969769:web:335267b0ff4b80f91f23b8"
+  appId: "1:397626969769:web:335267b0ff4b80f91f23b8",
   measurementId: "G-SN5RCHRYPN"
 };
+const USD_CRC = 530;          // tipo de cambio para totales en colones
+const USAR_FIREBASE = true;   // false = forzar datos locales (demo)
 
-/* ============================================================
-   INTEGRANTES DE LA FAMILIA — 4 personas. Editá nombres y colores.
-   ============================================================ */
-const INTEGRANTES = [
-  { nombre: "Daniel", color: "#4f46e5" },
-  { nombre: "Karin", color: "#0ea5e9" },
-  { nombre: "Matias", color: "#f59e0b" },
-  { nombre: "Iker", color: "#ec4899" }
-];
+// ─────────────────────────── Estado ───────────────────────────
+let TX = [];          // transacciones crudas
+let PRESUPUESTO = null; // presupuesto del mes seleccionado
+let PRESUPUESTOS = {};  // presupuestos por mes { "YYYY-MM": {...} }
+let mesActual = null;
+let fuente = 'local';
 
-/* Categorías por defecto (editables). El parser también usa esta lista. */
-const CATEGORIAS = [
-  "Alimentación", "Transporte", "Vivienda", "Servicios", "Salud",
-  "Educación", "Ocio", "Restaurantes", "Compras", "Viajes", "Otros"
-];
+const fmtCRC = n => '¢' + (n ?? 0).toLocaleString('es-CR', {minimumFractionDigits:0, maximumFractionDigits:0});
+const fmtCRC2 = n => '¢' + (n ?? 0).toLocaleString('es-CR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtUSD = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 
-/* ============================================================ */
+const crc = t => t.moneda === 'CRC' ? (t.monto ?? 0) : (t.monto ?? 0) * USD_CRC;
 
-let db = null;
-let firebaseOk = false;
-
-try {
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-  firebaseOk = true;
-} catch (e) {
-  console.error("Firebase init error:", e);
-  document.body.insertAdjacentHTML("afterbegin",
-    '<div style="background:#7f1d1d;color:#fff;padding:12px;text-align:center;font-size:14px">Error al inicializar Firebase — revisá firebaseConfig en el HTML.</div>');
-}
-
-const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-const fmt = new Intl.NumberFormat("es-CR");
-const money = (n) => "₡" + fmt.format(Math.round(n || 0));
-
-function mesActual() {
-  const d = new Date();
-  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
-}
-function mesLabel(m) {
-  if (!m) return "";
-  const [y, mm] = m.split("-");
-  return (meses[parseInt(mm, 10) - 1] || "") + " " + y;
-}
-function fechaLabel(f) {
-  if (!f) return "";
-  const p = String(f).split("T")[0].split("-");
-  if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
-  return f;
-}
-
-let allTxs = [];
-let budgets = {};   // { "YYYY-MM": { total, categorias:{}, personas:{} } }
-let currentMes = mesActual();
-
-const charts = {};
-function makeChart(id, cfg) {
-  const el = document.getElementById(id);
-  if (charts[id]) charts[id].destroy();
-  charts[id] = new Chart(el, cfg);
-}
-
-async function load() {
-  if (!firebaseOk) return;
-
-  // transacciones
-  const snap = await db.collection("transacciones").get();
-  allTxs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-  // presupuestos (todos los meses, para la vista por mes y la comparación)
-  const bSnap = await db.collection("presupuesto").get();
-  budgets = {};
-  bSnap.docs.forEach(d => { budgets[d.id] = d.data(); });
-
+// ─────────────────────────── Carga de datos ───────────────────────────
+async function cargarDatos() {
+  if (USAR_FIREBASE && FIREBASE_CONFIG.apiKey) {
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      const db = firebase.firestore();
+      const snap = await db.collection('transacciones').get();
+      if (!snap.empty) {
+        TX = snap.docs.map(d => d.data());
+        fuente = 'firestore';
+      }
+    } catch (e) {
+      console.warn('Firestore no disponible, usando datos locales:', e.message);
+    }
+  }
+  if (!TX.length) {
+    const r = await fetch('./data/transacciones.json');
+    if (r.ok) TX = await r.json();
+    fuente = 'local';
+  }
+  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort().reverse();
+  if (meses.length) mesActual = meses[0];
+  await cargarPresupuesto();
   render();
 }
 
-function txsDelMes(m) {
-  return allTxs.filter(t => (t.mes || "").startsWith(m));
+async function cargarPresupuesto() {
+  PRESUPUESTO = null;
+  if (fuente === 'firestore' && firebase.apps.length) {
+    try {
+      const db = firebase.firestore();
+      const snap = await db.collection('presupuesto').get();
+      if (!snap.empty) {
+        PRESUPUESTOS = {};
+        snap.docs.forEach(d => { PRESUPUESTOS[d.id] = d.data(); });
+        PRESUPUESTO = PRESUPUESTOS[mesActual] || null;
+        return;
+      }
+    } catch (e) { console.warn('Presupuesto Firestore no disponible:', e.message); }
+  }
+  try {
+    const r = await fetch('./config/presupuesto.json');
+    if (r.ok) {
+      const b = await r.json();
+      PRESUPUESTOS = { [b.mes]: b };
+      PRESUPUESTO = (b.mes === mesActual) ? b : null;
+    }
+  } catch (e) { /* sin presupuesto */ }
+}
+
+// ─────────────────────────── Agregación ───────────────────────────
+function txDelMes() { return TX.filter(t => t.mes === mesActual); }
+
+function agregar(fn, list) {
+  const acc = {};
+  for (const t of list) {
+    const k = fn(t);
+    acc[k] = (acc[k] || 0) + crc(t);
+  }
+  return acc;
+}
+
+// ─────────────────────────── Render ───────────────────────────
+const charts = {};
+function mkChart(id, cfg) {
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id), cfg);
+}
+
+function renderKpis() {
+  const txs = txDelMes();
+  const total = txs.reduce((s, t) => s + crc(t), 0);
+  const porCat = agregar(t => t.categoria, txs);
+  const porPer = agregar(t => t.persona, txs);
+  const topCat = Object.entries(porCat).sort((a,b) => b[1]-a[1])[0];
+  const topPer = Object.entries(porPer).sort((a,b) => b[1]-a[1])[0];
+  const presupTotal = PRESUPUESTO?.total ?? null;
+  const dif = presupTotal != null ? total - presupTotal : null;
+
+  const kpis = [
+    { label: 'Gasto del mes', valor: fmtCRC(total), sub: `${txs.length} transacciones` },
+    { label: 'Presupuesto', valor: presupTotal != null ? fmtCRC(presupTotal) : '—', sub: dif != null
+        ? (dif <= 0 ? `Disponible ${fmtCRC(-dif)}` : `Excedido ${fmtCRC(dif)}`) : 'sin presupuesto',
+      color: dif != null && dif > 0 ? 'text-rose-400' : 'text-emerald-400' },
+    { label: 'Top categoría', valor: topCat ? topCat[0] : '—', sub: topCat ? fmtCRC(topCat[1]) : '' },
+    { label: 'Top persona', valor: topPer ? topPer[0] : '—', sub: topPer ? fmtCRC(topPer[1]) : '' },
+  ];
+  document.getElementById('kpis').innerHTML = kpis.map(k => `
+    <div class="card p-4">
+      <div class="text-xs text-slate-400">${k.label}</div>
+      <div class="text-xl font-bold text-white mt-1 ${k.color || ''}">${k.valor}</div>
+      <div class="text-xs text-slate-500 mt-1">${k.sub}</div>
+    </div>`).join('');
+}
+
+function renderCharts() {
+  const txs = txDelMes();
+  const porCat = agregar(t => t.categoria, txs);
+  const porPer = agregar(t => t.persona, txs);
+  const cats = Object.entries(porCat).sort((a,b) => b[1]-a[1]);
+  const pers = Object.entries(porPer).sort((a,b) => b[1]-a[1]);
+  const cols = ['#38bdf8','#34d399','#f472b6','#fbbf24','#a78bfa','#fb923c','#22d3ee','#e879f9','#4ade80','#f87171','#94a3b8','#facc15','#60a5fa'];
+
+  mkChart('chartCategorias', {
+    type: 'bar',
+    data: { labels: cats.map(c => c[0]), datasets: [{ data: cats.map(c => c[1]), backgroundColor: cols, borderRadius: 6 }] },
+    options: { indexAxis: 'y', plugins: { legend: { display: false } },
+      scales: { x: { ticks: { color: '#64748b', callback: v => fmtCRC(v) }, grid: { color: '#1f2a44' } },
+                y: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
+  });
+
+  mkChart('chartPersonas', {
+    type: 'doughnut',
+    data: { labels: pers.map(p => p[0]), datasets: [{ data: pers.map(p => p[1]), backgroundColor: cols, borderWidth: 0 }] },
+    options: { cutout: '60%', plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10 } } } }
+  });
+
+  // Evolución mensual (todos los datos) — gasto vs presupuesto
+  const porMes = agregar(t => t.mes, TX);
+  const meses = Object.keys(porMes).sort();
+  mkChart('chartMeses', {
+    type: 'bar',
+    data: { labels: meses.map(m => m.replace('-',' · ')),
+      datasets: [
+        { label: 'Gasto', data: meses.map(m => porMes[m]), backgroundColor: '#38bdf8', borderRadius: 4 },
+        { label: 'Presupuesto', data: meses.map(m => (PRESUPUESTOS[m]?.total) || 0), backgroundColor: '#334155', borderRadius: 4 }
+      ] },
+    options: { plugins: { legend: { labels: { color: '#94a3b8' } } },
+      scales: { y: { ticks: { color: '#64748b', callback: v => fmtCRC(v) }, grid: { color: '#1f2a44' } },
+                x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
+  });
+}
+
+function barra(actual, presup) {
+  const pct = presup > 0 ? Math.min(100, actual / presup * 100) : 0;
+  const excede = actual > presup;
+  const color = excede ? 'bg-rose-500' : 'bg-emerald-500';
+  return `
+    <div class="flex justify-between text-xs mb-1">
+      <span class="text-slate-300">${presup != null ? fmtCRC(actual) : ''}</span>
+      <span class="text-slate-500">${presup != null ? 'de ' + fmtCRC(presup) : ''}</span>
+    </div>
+    <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+      <div class="h-full ${color} rounded-full" style="width:${pct}%"></div>
+    </div>`;
+}
+
+function renderPresupuesto() {
+  const txs = txDelMes();
+  const porPer = agregar(t => t.persona, txs);
+  const porCat = agregar(t => t.categoria, txs);
+
+  const perEl = document.getElementById('presupuestoPersonas');
+  const pp = PRESUPUESTO?.por_persona;
+  if (!pp) {
+    perEl.innerHTML = '<p class="text-sm text-slate-500">Sin presupuesto configurado. Crea <code>config/presupuesto.json</code> o un doc <code>presupuesto/YYYY-MM</code> en Firestore.</p>';
+  } else {
+    perEl.innerHTML = Object.keys(pp).map(p => `
+      <div>
+        <div class="flex justify-between text-sm mb-1">
+          <span class="font-medium text-slate-200">${p}</span>
+          <span class="text-xs ${(porPer[p]||0) > pp[p] ? 'text-rose-400' : 'text-emerald-400'}">${fmtCRC(porPer[p]||0)} / ${fmtCRC(pp[p])}</span>
+        </div>
+        ${barra(porPer[p]||0, pp[p])}
+      </div>`).join('');
+  }
+
+  const catEl = document.getElementById('presupuestoCategorias');
+  const pc = PRESUPUESTO?.por_categoria;
+  if (!pc) {
+    catEl.innerHTML = '<p class="text-sm text-slate-500">Sin presupuesto por categoría.</p>';
+  } else {
+    catEl.innerHTML = Object.keys(pc).map(c => `
+      <div>
+        <div class="flex justify-between text-sm mb-1">
+          <span class="text-slate-200">${c}</span>
+          <span class="text-xs ${(porCat[c]||0) > pc[c] ? 'text-rose-400' : 'text-emerald-400'}">${fmtCRC(porCat[c]||0)} / ${fmtCRC(pc[c])}</span>
+        </div>
+        ${barra(porCat[c]||0, pc[c])}
+      </div>`).join('');
+  }
+}
+
+function renderTabla() {
+  const fp = document.getElementById('filtroPersona').value;
+  const fc = document.getElementById('filtroCategoria').value;
+  const ft = document.getElementById('filtroTexto').value.toLowerCase();
+  const txs = txDelMes()
+    .filter(t => !fp || t.persona === fp)
+    .filter(t => !fc || t.categoria === fc)
+    .filter(t => !ft || t.descripcion.toLowerCase().includes(ft))
+    .sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+
+  document.getElementById('txCount').textContent = `(${txs.length})`;
+  document.getElementById('txBody').innerHTML = txs.slice(0, 300).map(t => `
+    <tr class="hover:bg-slate-800/50">
+      <td class="py-2 pr-3 text-slate-400 whitespace-nowrap">${t.fecha || ''}</td>
+      <td class="py-2 pr-3"><span class="px-2 py-0.5 rounded-full text-xs bg-slate-800 text-slate-200">${t.persona}</span></td>
+      <td class="py-2 pr-3 text-slate-300">${(t.descripcion||'').replace(/_/g,' ')}</td>
+      <td class="py-2 pr-3 text-xs text-slate-400">${t.categoria}</td>
+      <td class="py-2 pr-3 text-xs text-slate-500">${t.lugar || ''}</td>
+      <td class="py-2 text-right font-medium whitespace-nowrap ${(t.monto||0) < 0 ? 'text-emerald-400' : 'text-slate-200'}">${t.moneda === 'USD' ? fmtUSD(t.monto) : fmtCRC2(t.monto)}</td>
+    </tr>`).join('') || '<tr><td colspan="6" class="py-4 text-center text-slate-500">Sin transacciones</td></tr>';
+}
+
+function poblarSelectores() {
+  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort().reverse();
+  const sel = document.getElementById('mesSel');
+  sel.innerHTML = meses.map(m => `<option value="${m}">${m.replace('-',' · ')}</option>`).join('');
+  if (meses.length) mesActual = meses[0];
+
+  const personas = [...new Set(TX.map(t => t.persona))].sort();
+  const cats = [...new Set(TX.map(t => t.categoria))].sort();
+  document.getElementById('filtroPersona').innerHTML = '<option value="">Todas las personas</option>' + personas.map(p => `<option>${p}</option>`).join('');
+  document.getElementById('filtroCategoria').innerHTML = '<option value="">Todas las categorías</option>' + cats.map(c => `<option>${c}</option>`).join('');
 }
 
 function render() {
-  const txs = txsDelMes(currentMes);
-  const gastos = txs.filter(t => (t.tipo || "gasto") !== "ingreso");
-
-  // KPIs
-  const totalGastado = gastos.reduce((s, t) => s + (Number(t.monto) || 0), 0);
-  const b = budgets[currentMes] || {};
-  const totalBudget = Number(b.total) || 0;
-  document.getElementById("kpi-gastado").textContent = money(totalGastado);
-  document.getElementById("kpi-presupuesto").textContent = money(totalBudget);
-  const disponible = totalBudget - totalGastado;
-  const kpiDisp = document.getElementById("kpi-disponible");
-  kpiDisp.textContent = money(disponible);
-  kpiDisp.className = "text-2xl font-bold mt-1 " + (totalBudget > 0 ? (disponible >= 0 ? "text-emerald-400" : "text-rose-400") : "text-slate-100");
-  document.getElementById("kpi-count").textContent = gastos.length;
-
-  const ml = mesLabel(currentMes);
-  document.getElementById("lbl-persona-mes").textContent = "· " + ml;
-  document.getElementById("lbl-cat-mes").textContent = "· " + ml;
-
-  // --- por persona ---
-  const porPersona = INTEGRANTES.map(p => ({
-    nombre: p.nombre,
-    color: p.color,
-    total: gastos.filter(t => t.persona === p.nombre).reduce((s, t) => s + (Number(t.monto) || 0), 0)
-  }));
-  makeChart("chart-persona", {
-    type: "bar",
-    data: { labels: porPersona.map(x => x.nombre), datasets: [{ label: "Gasto", data: porPersona.map(x => x.total), backgroundColor: porPersona.map(x => x.color) }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: "#94a3b8", callback: v => money(v) } }, x: { ticks: { color: "#94a3b8" } } } }
-  });
-
-  // --- por categoría ---
-  const porCat = CATEGORIAS.map(c => ({
-    cat: c,
-    total: gastos.filter(t => t.categoria === c).reduce((s, t) => s + (Number(t.monto) || 0), 0)
-  })).filter(x => x.total > 0).sort((a, b) => b.total - a.total);
-  const paleta = ["#4f46e5","#0ea5e9","#f59e0b","#ec4899","#10b981","#8b5cf6","#ef4444","#14b8a6","#f97316","#a3e635","#94a3b8"];
-  makeChart("chart-categoria", {
-    type: "doughnut",
-    data: { labels: porCat.map(x => x.cat), datasets: [{ data: porCat.map(x => x.total), backgroundColor: porCat.map((x, i) => paleta[i % paleta.length]) }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { color: "#94a3b8", boxWidth: 12 } } } }
-  });
-
-  // --- por mes (últimos 12) ---
-  const meses12 = [];
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(currentMes + "-01");
-    d.setMonth(d.getMonth() - i);
-    meses12.push(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"));
-  }
-  const porMes = meses12.map(m => {
-    const gasto = txsDelMes(m).filter(t => (t.tipo || "gasto") !== "ingreso").reduce((s, t) => s + (Number(t.monto) || 0), 0);
-    const bm = budgets[m] || {};
-    return { m, gasto, presupuesto: Number(bm.total) || 0 };
-  });
-  makeChart("chart-mes", {
-    type: "bar",
-    data: {
-      labels: porMes.map(x => mesLabel(x.m)),
-      datasets: [
-        { label: "Gasto", data: porMes.map(x => x.gasto), backgroundColor: "#4f46e5" },
-        { label: "Presupuesto", data: porMes.map(x => x.presupuesto), backgroundColor: "#334155" }
-      ]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: "#94a3b8" } } }, scales: { y: { ticks: { color: "#94a3b8", callback: v => money(v) } }, x: { ticks: { color: "#94a3b8" } } } }
-  });
-
-  // --- presupuesto por categoría ---
-  renderPresupuesto(b, porCat, totalGastado);
-
-  // --- tabla ---
-  renderTabla(gastos);
+  poblarSelectores();
+  renderKpis();
+  renderCharts();
+  renderPresupuesto();
+  renderTabla();
+  document.getElementById('fuenteBtn').textContent = fuente === 'firestore' ? '● Firestore' : '● datos locales';
+  document.getElementById('projId').textContent = FIREBASE_CONFIG.projectId;
+  document.getElementById('tasaLabel').textContent = USD_CRC;
 }
 
-function renderPresupuesto(b, porCat, totalGastado) {
-  const cont = document.getElementById("presupuesto-lista");
-  const vacio = document.getElementById("presupuesto-vacio");
-  const cats = (b && b.categorias) || {};
-  const entries = Object.entries(cats).map(([cat, lim]) => {
-    const gasto = porCat.find(x => x.cat === cat)?.total || 0;
-    const limNum = Number(lim) || 0;
-    const pct = limNum > 0 ? Math.min(100, Math.round(gasto / limNum * 100)) : (gasto > 0 ? 100 : 0);
-    const sobre = limNum > 0 && gasto > limNum;
-    return { cat, gasto, lim: limNum, pct, sobre };
-  }).sort((a, b) => b.gasto - a.gasto);
+document.getElementById('mesSel').addEventListener('change', e => { mesActual = e.target.value; PRESUPUESTO = PRESUPUESTOS[mesActual] || null; render(); });
+document.getElementById('filtroPersona').addEventListener('change', renderTabla);
+document.getElementById('filtroCategoria').addEventListener('change', renderTabla);
+document.getElementById('filtroTexto').addEventListener('input', renderTabla);
 
-  if (entries.length === 0) {
-    cont.innerHTML = "";
-    vacio.classList.remove("hidden");
-    return;
-  }
-  vacio.classList.add("hidden");
-  cont.innerHTML = entries.map(e => `
-    <div>
-      <div class="flex justify-between text-sm mb-1">
-        <span>${e.cat}</span>
-        <span class="${e.sobre ? "text-rose-400" : "text-slate-300"}">${money(e.gasto)} / ${money(e.lim)}</span>
-      </div>
-      <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
-        <div class="h-full ${e.sobre ? "bg-rose-500" : "bg-emerald-500"}" style="width:${e.pct}%"></div>
-      </div>
-    </div>`).join("");
-}
-
-function renderTabla(gastos) {
-  const tbody = document.getElementById("tabla-movimientos");
-  const fPersona = document.getElementById("filtro-persona").value;
-  const fCat = document.getElementById("filtro-categoria").value;
-  const rows = [...gastos]
-    .filter(t => !fPersona || t.persona === fPersona)
-    .filter(t => !fCat || t.categoria === fCat)
-    .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))
-    .slice(0, 300);
-  tbody.innerHTML = rows.map(t => `
-    <tr class="hover:bg-slate-800/40">
-      <td class="py-2 pr-4 text-slate-400 whitespace-nowrap">${fechaLabel(t.fecha)}</td>
-      <td class="py-2 pr-4">${(t.descripcion || "").replace(/</g, "&lt;")}</td>
-      <td class="py-2 pr-4">${t.persona || ""}</td>
-      <td class="py-2 pr-4"><span class="px-2 py-0.5 rounded bg-slate-800 text-xs">${t.categoria || "—"}</span></td>
-      <td class="py-2 text-right font-medium ${(t.tipo === "ingreso") ? "text-emerald-400" : "text-slate-100"}">${money(t.monto)}</td>
-    </tr>`).join("") || '<tr><td colspan="5" class="py-6 text-center text-slate-500">Sin movimientos para este mes.</td></tr>';
-}
-
-function populateFilters() {
-  const pSel = document.getElementById("filtro-persona");
-  pSel.innerHTML = '<option value="">Todas las personas</option>' + INTEGRANTES.map(p => `<option>${p.nombre}</option>`).join("");
-  const cSel = document.getElementById("filtro-categoria");
-  cSel.innerHTML = '<option value="">Todas las categorías</option>' + CATEGORIAS.map(c => `<option>${c}</option>`).join("");
-}
-
-// init
-document.getElementById("mes-selector").value = mesActual();
-document.getElementById("mes-selector").addEventListener("change", e => { currentMes = e.target.value || mesActual(); render(); });
-document.getElementById("filtro-persona").addEventListener("change", render);
-document.getElementById("filtro-categoria").addEventListener("change", render);
-populateFilters();
-load();
+cargarDatos();
 </script>
 </body>
 </html>
