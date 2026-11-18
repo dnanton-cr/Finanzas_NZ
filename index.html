@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finanzas NZ — Control de gastos familiares</title>
+<meta name="description" content="Dashboard de gastos familiares por persona, categoría y mes, con comparación contra presupuesto.">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen" style="font-family: Inter, system-ui, sans-serif;">
+
+<!-- ============================================================
+     CONFIGURACIÓN — EDITA ESTO
+     ============================================================ -->
+<div class="max-w-7xl mx-auto p-4 md:p-6">
+
+  <header class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Finanzas <span class="text-emerald-400">NZ</span></h1>
+      <p class="text-slate-400 text-sm">Gastos por persona · categoría · mes · presupuesto</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <label class="text-sm text-slate-400">Mes</label>
+      <input type="month" id="mes-selector" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+    </div>
+  </header>
+
+  <!-- KPIs -->
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <p class="text-slate-400 text-xs uppercase tracking-wide">Gastado (mes)</p>
+      <p class="text-2xl font-bold mt-1" id="kpi-gastado">—</p>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <p class="text-slate-400 text-xs uppercase tracking-wide">Presupuesto (mes)</p>
+      <p class="text-2xl font-bold mt-1" id="kpi-presupuesto">—</p>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <p class="text-slate-400 text-xs uppercase tracking-wide">Disponible</p>
+      <p class="text-2xl font-bold mt-1" id="kpi-disponible">—</p>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <p class="text-slate-400 text-xs uppercase tracking-wide">Transacciones</p>
+      <p class="text-2xl font-bold mt-1" id="kpi-count">—</p>
+    </div>
+  </section>
+
+  <!-- Charts -->
+  <section class="grid lg:grid-cols-2 gap-4 mb-6">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <h2 class="font-semibold mb-3">Gastos por persona <span class="text-slate-500 font-normal text-sm" id="lbl-persona-mes"></span></h2>
+      <div class="h-64"><canvas id="chart-persona"></canvas></div>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <h2 class="font-semibold mb-3">Gastos por categoría <span class="text-slate-500 font-normal text-sm" id="lbl-cat-mes"></span></h2>
+      <div class="h-64"><canvas id="chart-categoria"></canvas></div>
+    </div>
+  </section>
+
+  <section class="mb-6">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <h2 class="font-semibold mb-3">Gasto por mes (últimos 12 meses)</h2>
+      <div class="h-64"><canvas id="chart-mes"></canvas></div>
+    </div>
+  </section>
+
+  <!-- Budget comparison -->
+  <section class="mb-6">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <h2 class="font-semibold mb-4">Presupuesto vs. gasto por categoría</h2>
+      <div id="presupuesto-lista" class="space-y-3"></div>
+      <p id="presupuesto-vacio" class="text-slate-500 text-sm hidden">No hay presupuesto definido para este mes.</p>
+    </div>
+  </section>
+
+  <!-- Transactions table -->
+  <section>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <h2 class="font-semibold">Movimientos</h2>
+        <div class="flex gap-2">
+          <select id="filtro-persona" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm">
+            <option value="">Todas las personas</option>
+          </select>
+          <select id="filtro-categoria" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm">
+            <option value="">Todas las categorías</option>
+          </select>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-slate-400 border-b border-slate-800">
+              <th class="py-2 pr-4">Fecha</th>
+              <th class="py-2 pr-4">Descripción</th>
+              <th class="py-2 pr-4">Persona</th>
+              <th class="py-2 pr-4">Categoría</th>
+              <th class="py-2 text-right">Monto</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-movimientos" class="divide-y divide-slate-800/60"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center text-slate-600 text-xs mt-8 pb-6">
+    Finanzas NZ · datos en Firebase Firestore (proyecto <span class="text-slate-400">finanzasnz</span>)
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN DE FIREBASE — reemplazá con tus valores reales.
+   Firebase Console → finanzasnz → Configuración del proyecto → Tus apps → Web.
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "finanzasnz.firebaseapp.com",
+  projectId: "finanzasnz",
+  storageBucket: "finanzasnz.appspot.com",
+  messagingSenderId: "TU_SENDER_ID",
+  appId: "TU_APP_ID"
+};
+
+/* ============================================================
+   INTEGRANTES DE LA FAMILIA — 4 personas. Editá nombres y colores.
+   ============================================================ */
+const INTEGRANTES = [
+  { nombre: "Integrante 1", color: "#4f46e5" },
+  { nombre: "Integrante 2", color: "#0ea5e9" },
+  { nombre: "Integrante 3", color: "#f59e0b" },
+  { nombre: "Integrante 4", color: "#ec4899" }
+];
+
+/* Categorías por defecto (editables). El parser también usa esta lista. */
+const CATEGORIAS = [
+  "Alimentación", "Transporte", "Vivienda", "Servicios", "Salud",
+  "Educación", "Ocio", "Restaurantes", "Compras", "Viajes", "Otros"
+];
+
+/* ============================================================ */
+
+let db = null;
+let firebaseOk = false;
+
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  firebaseOk = true;
+} catch (e) {
+  console.error("Firebase init error:", e);
+  document.body.insertAdjacentHTML("afterbegin",
+    '<div style="background:#7f1d1d;color:#fff;padding:12px;text-align:center;font-size:14px">Error al inicializar Firebase — revisá firebaseConfig en el HTML.</div>');
+}
+
+const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const fmt = new Intl.NumberFormat("es-CR");
+const money = (n) => "₡" + fmt.format(Math.round(n || 0));
+
+function mesActual() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+}
+function mesLabel(m) {
+  if (!m) return "";
+  const [y, mm] = m.split("-");
+  return (meses[parseInt(mm, 10) - 1] || "") + " " + y;
+}
+function fechaLabel(f) {
+  if (!f) return "";
+  const p = String(f).split("T")[0].split("-");
+  if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
+  return f;
+}
+
+let allTxs = [];
+let budgets = {};   // { "YYYY-MM": { total, categorias:{}, personas:{} } }
+let currentMes = mesActual();
+
+const charts = {};
+function makeChart(id, cfg) {
+  const el = document.getElementById(id);
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(el, cfg);
+}
+
+async function load() {
+  if (!firebaseOk) return;
+
+  // transacciones
+  const snap = await db.collection("transacciones").get();
+  allTxs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // presupuestos (todos los meses, para la vista por mes y la comparación)
+  const bSnap = await db.collection("presupuesto").get();
+  budgets = {};
+  bSnap.docs.forEach(d => { budgets[d.id] = d.data(); });
+
+  render();
+}
+
+function txsDelMes(m) {
+  return allTxs.filter(t => (t.mes || "").startsWith(m));
+}
+
+function render() {
+  const txs = txsDelMes(currentMes);
+  const gastos = txs.filter(t => (t.tipo || "gasto") !== "ingreso");
+
+  // KPIs
+  const totalGastado = gastos.reduce((s, t) => s + (Number(t.monto) || 0), 0);
+  const b = budgets[currentMes] || {};
+  const totalBudget = Number(b.total) || 0;
+  document.getElementById("kpi-gastado").textContent = money(totalGastado);
+  document.getElementById("kpi-presupuesto").textContent = money(totalBudget);
+  const disponible = totalBudget - totalGastado;
+  const kpiDisp = document.getElementById("kpi-disponible");
+  kpiDisp.textContent = money(disponible);
+  kpiDisp.className = "text-2xl font-bold mt-1 " + (totalBudget > 0 ? (disponible >= 0 ? "text-emerald-400" : "text-rose-400") : "text-slate-100");
+  document.getElementById("kpi-count").textContent = gastos.length;
+
+  const ml = mesLabel(currentMes);
+  document.getElementById("lbl-persona-mes").textContent = "· " + ml;
+  document.getElementById("lbl-cat-mes").textContent = "· " + ml;
+
+  // --- por persona ---
+  const porPersona = INTEGRANTES.map(p => ({
+    nombre: p.nombre,
+    color: p.color,
+    total: gastos.filter(t => t.persona === p.nombre).reduce((s, t) => s + (Number(t.monto) || 0), 0)
+  }));
+  makeChart("chart-persona", {
+    type: "bar",
+    data: { labels: porPersona.map(x => x.nombre), datasets: [{ label: "Gasto", data: porPersona.map(x => x.total), backgroundColor: porPersona.map(x => x.color) }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: "#94a3b8", callback: v => money(v) } }, x: { ticks: { color: "#94a3b8" } } } }
+  });
+
+  // --- por categoría ---
+  const porCat = CATEGORIAS.map(c => ({
+    cat: c,
+    total: gastos.filter(t => t.categoria === c).reduce((s, t) => s + (Number(t.monto) || 0), 0)
+  })).filter(x => x.total > 0).sort((a, b) => b.total - a.total);
+  const paleta = ["#4f46e5","#0ea5e9","#f59e0b","#ec4899","#10b981","#8b5cf6","#ef4444","#14b8a6","#f97316","#a3e635","#94a3b8"];
+  makeChart("chart-categoria", {
+    type: "doughnut",
+    data: { labels: porCat.map(x => x.cat), datasets: [{ data: porCat.map(x => x.total), backgroundColor: porCat.map((x, i) => paleta[i % paleta.length]) }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { color: "#94a3b8", boxWidth: 12 } } } }
+  });
+
+  // --- por mes (últimos 12) ---
+  const meses12 = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(currentMes + "-01");
+    d.setMonth(d.getMonth() - i);
+    meses12.push(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"));
+  }
+  const porMes = meses12.map(m => {
+    const gasto = txsDelMes(m).filter(t => (t.tipo || "gasto") !== "ingreso").reduce((s, t) => s + (Number(t.monto) || 0), 0);
+    const bm = budgets[m] || {};
+    return { m, gasto, presupuesto: Number(bm.total) || 0 };
+  });
+  makeChart("chart-mes", {
+    type: "bar",
+    data: {
+      labels: porMes.map(x => mesLabel(x.m)),
+      datasets: [
+        { label: "Gasto", data: porMes.map(x => x.gasto), backgroundColor: "#4f46e5" },
+        { label: "Presupuesto", data: porMes.map(x => x.presupuesto), backgroundColor: "#334155" }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: "#94a3b8" } } }, scales: { y: { ticks: { color: "#94a3b8", callback: v => money(v) } }, x: { ticks: { color: "#94a3b8" } } } }
+  });
+
+  // --- presupuesto por categoría ---
+  renderPresupuesto(b, porCat, totalGastado);
+
+  // --- tabla ---
+  renderTabla(gastos);
+}
+
+function renderPresupuesto(b, porCat, totalGastado) {
+  const cont = document.getElementById("presupuesto-lista");
+  const vacio = document.getElementById("presupuesto-vacio");
+  const cats = (b && b.categorias) || {};
+  const entries = Object.entries(cats).map(([cat, lim]) => {
+    const gasto = porCat.find(x => x.cat === cat)?.total || 0;
+    const limNum = Number(lim) || 0;
+    const pct = limNum > 0 ? Math.min(100, Math.round(gasto / limNum * 100)) : (gasto > 0 ? 100 : 0);
+    const sobre = limNum > 0 && gasto > limNum;
+    return { cat, gasto, lim: limNum, pct, sobre };
+  }).sort((a, b) => b.gasto - a.gasto);
+
+  if (entries.length === 0) {
+    cont.innerHTML = "";
+    vacio.classList.remove("hidden");
+    return;
+  }
+  vacio.classList.add("hidden");
+  cont.innerHTML = entries.map(e => `
+    <div>
+      <div class="flex justify-between text-sm mb-1">
+        <span>${e.cat}</span>
+        <span class="${e.sobre ? "text-rose-400" : "text-slate-300"}">${money(e.gasto)} / ${money(e.lim)}</span>
+      </div>
+      <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+        <div class="h-full ${e.sobre ? "bg-rose-500" : "bg-emerald-500"}" style="width:${e.pct}%"></div>
+      </div>
+    </div>`).join("");
+}
+
+function renderTabla(gastos) {
+  const tbody = document.getElementById("tabla-movimientos");
+  const fPersona = document.getElementById("filtro-persona").value;
+  const fCat = document.getElementById("filtro-categoria").value;
+  const rows = [...gastos]
+    .filter(t => !fPersona || t.persona === fPersona)
+    .filter(t => !fCat || t.categoria === fCat)
+    .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))
+    .slice(0, 300);
+  tbody.innerHTML = rows.map(t => `
+    <tr class="hover:bg-slate-800/40">
+      <td class="py-2 pr-4 text-slate-400 whitespace-nowrap">${fechaLabel(t.fecha)}</td>
+      <td class="py-2 pr-4">${(t.descripcion || "").replace(/</g, "&lt;")}</td>
+      <td class="py-2 pr-4">${t.persona || ""}</td>
+      <td class="py-2 pr-4"><span class="px-2 py-0.5 rounded bg-slate-800 text-xs">${t.categoria || "—"}</span></td>
+      <td class="py-2 text-right font-medium ${(t.tipo === "ingreso") ? "text-emerald-400" : "text-slate-100"}">${money(t.monto)}</td>
+    </tr>`).join("") || '<tr><td colspan="5" class="py-6 text-center text-slate-500">Sin movimientos para este mes.</td></tr>';
+}
+
+function populateFilters() {
+  const pSel = document.getElementById("filtro-persona");
+  pSel.innerHTML = '<option value="">Todas las personas</option>' + INTEGRANTES.map(p => `<option>${p.nombre}</option>`).join("");
+  const cSel = document.getElementById("filtro-categoria");
+  cSel.innerHTML = '<option value="">Todas las categorías</option>' + CATEGORIAS.map(c => `<option>${c}</option>`).join("");
+}
+
+// init
+document.getElementById("mes-selector").value = mesActual();
+document.getElementById("mes-selector").addEventListener("change", e => { currentMes = e.target.value || mesActual(); render(); });
+document.getElementById("filtro-persona").addEventListener("change", render);
+document.getElementById("filtro-categoria").addEventListener("change", render);
+populateFilters();
+load();
+</script>
+</body>
+</html>
