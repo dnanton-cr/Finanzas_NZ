@@ -30,6 +30,16 @@
     return (2000 + parseInt(m[3], 10)) + '-' + PAD(MESES[m[2].toUpperCase()]) + '-' + PAD(parseInt(m[1], 10));
   }
 
+  // Si el PDF no trae fecha, se infiere del número de referencia BAC (MMDD al inicio).
+  function fechaDesdeReferencia(ref, anio) {
+    const m = /^(\d{2})(\d{2})\d+$/.exec(String(ref || '').trim());
+    if (!m) return null;
+    const mm = parseInt(m[1], 10), dd = parseInt(m[2], 10);
+    if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+    const a = anio || new Date().getFullYear();
+    return a + '-' + PAD(mm) + '-' + PAD(dd);
+  }
+
   function extraerLugar(desc) {
     const c = desc.match(/\b([A-Z]{3})\b/g) || [];
     for (let i = c.length - 1; i >= 0; i--) if (PAISES[c[i]]) return c[i];
@@ -99,7 +109,7 @@
         if (!REF_RE.test(limpio[i])) { i++; continue; }
         const ref = limpio[i]; i++;
         if (i >= n) break;
-        const fecha = parseFecha(limpio[i]); i++;
+        const fecha = parseFecha(limpio[i]) || fechaDesdeReferencia(ref); i++;
         const descParts = [];
         while (i < n && limpio[i] !== 'USD' && limpio[i] !== 'CRC' && limpio[i] !== 'EUR' && !REF_RE.test(limpio[i])) { descParts.push(limpio[i]); i++; }
         if (i >= n) break;
@@ -137,7 +147,7 @@
       const parts = l.split(/\s{2,}/);
       if (parts.length >= 5 && REF_RE.test(parts[0])) {
         const ref = parts[0];
-        const fecha = parseFecha(parts[1]);
+        const fecha = parseFecha(parts[1]) || fechaDesdeReferencia(ref);
         const moneda = parts[parts.length - 2];
         const monto = parseMonto(parts[parts.length - 1]);
         const desc = (parts[2] + ' ' + parts.slice(3, parts.length - 2).join(' ')).trim();

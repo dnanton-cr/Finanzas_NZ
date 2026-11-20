@@ -65,6 +65,20 @@ def parse_fecha(s: str):
     return f"{anio:04d}-{mes:02d}-{dia:02d}"
 
 
+def fecha_desde_referencia(ref: str, anio: int = None):
+    """Si el PDF no trae fecha, se infiere del número de referencia BAC (MMDD al inicio).
+    Es la fecha de registro BAC; puede diferir 1-2 días de la fecha de compra."""
+    m = re.match(r"^(\d{2})(\d{2})\d+$", (ref or "").strip())
+    if not m:
+        return None
+    mm, dd = int(m.group(1)), int(m.group(2))
+    if not (1 <= mm <= 12 and 1 <= dd <= 31):
+        return None
+    from datetime import date
+    anio = anio or date.today().year
+    return f"{anio:04d}-{mm:02d}-{dd:02d}"
+
+
 def extraer_lugar(desc: str):
     """Intenta extraer el código de país (DEU, CRI, ...) al final de la descripción."""
     codes = re.findall(r"\b([A-Z]{3})\b", desc)
@@ -163,7 +177,7 @@ def parsear(texto: str, config: dict):
             i += 1
             if i >= n:
                 break
-            fecha = parse_fecha(limpio[i])
+            fecha = parse_fecha(limpio[i]) or fecha_desde_referencia(ref)
             i += 1
             desc_parts = []
             while i < n and limpio[i] not in ("USD", "CRC", "EUR") and not REF_RE.match(limpio[i]):

@@ -168,11 +168,38 @@ let PRESUPUESTO = null; // presupuesto del mes seleccionado
 let PRESUPUESTOS = {};  // presupuestos por mes { "YYYY-MM": {...} }
 let mesActual = null;
 let fuente = 'local';
+let APRENDIDAS = new Map();   // descripcion normalizada -> categoria (aprendida de meses previos)
+let CATEGORIAS = [];          // lista completa de categorias (config + datos)
 
 const money = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
 const money2 = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 const usd = t => (t.monto_usd ?? 0);
 const native = t => (t.moneda === 'CRC' ? '¢' : t.moneda === 'EUR' ? '€' : '$') + (t.monto ?? 0).toLocaleString('es-CR', {maximumFractionDigits:2});
+
+// Normaliza una descripción para emparejar el mismo comercio entre meses:
+// minúsculas, números largos → '#', espacios colapsados.
+function normDesc(s) {
+  return String(s || '').toLowerCase().replace(/[0-9]{3,}/g, '#').replace(/\s+/g, ' ').trim();
+}
+// Aprende la categoría de cada descripción a partir de las transacciones ya existentes
+// (prioridad: la asignación más reciente, ignorando 'Otros').
+function construirAprendidas() {
+  APRENDIDAS = new Map();
+  const otros = (CONFIG && CONFIG.otros_nombre) || 'Otros';
+  const ordenadas = [...TX].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+  for (const t of ordenadas) {
+    const c = t.categoria;
+    if (!c || c === otros) continue;
+    const k = normDesc(t.descripcion);
+    if (k && k.length >= 4 && !APRENDIDAS.has(k)) APRENDIDAS.set(k, c);
+  }
+}
+function construirCatalogos() {
+  const cfgCats = (CONFIG && CONFIG.categorias) ? CONFIG.categorias.map(c => c.nombre) : [];
+  const txCats = [...new Set(TX.map(t => t.categoria).filter(Boolean))];
+  CATEGORIAS = [...new Set([...cfgCats, ...txCats])].sort();
+  construirAprendidas();
+}
 
 // ─────────────────────────── Carga de datos ───────────────────────────
 async function cargarDatos() {
@@ -182,7 +209,7 @@ async function cargarDatos() {
       const db = firebase.firestore();
       const snap = await db.collection('transacciones').get();
       if (!snap.empty) {
-        TX = snap.docs.map(d => d.data());
+        TX = snap.docs.map(d => Object.assign({}, d.data(), { _id: d.id }));
         fuente = 'firestore';
       }
     } catch (e) {
@@ -196,6 +223,8 @@ async function cargarDatos() {
   }
   const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort().reverse();
   if (meses.length) mesActual = meses[0];
+  await cargarConfig();
+  construirCatalogos();
   await cargarPresupuesto();
   render();
 }
@@ -209,7 +238,7 @@ async function cargarPresupuesto() {
       if (!snap.empty) {
         PRESUPUESTOS = {};
         snap.docs.forEach(d => { PRESUPUESTOS[d.id] = d.data(); });
-        PRESUPUESTO = PRESUPUESTOS[mesActual] || null;
+        PRESUPUESTO = presupuestoDe(mesActual);
         return;
       }
     } catch (e) { console.warn('Presupuesto Firestore no disponible:', e.message); }
@@ -219,10 +248,18 @@ async function cargarPresupuesto() {
     if (r.ok) {
       const b = await r.json();
       PRESUPUESTOS = { [b.mes]: b };
-      PRESUPUESTO = (b.mes === mesActual) ? b : null;
+      PRESUPUESTO = presupuestoDe(mesActual);
     }
   } catch (e) { /* sin presupuesto */ }
 }
+
+// Un mes sin presupuesto propio usa el presupuesto más reciente como plantilla,
+// de modo que todos los meses muestran su presupuesto aunque solo exista un doc.
+function presupuestoTemplate() {
+  const meses = Object.keys(PRESUPUESTOS).sort();
+  return meses.length ? PRESUPUESTOS[meses[meses.length - 1]] : null;
+}
+function presupuestoDe(mes) { return PRESUPUESTOS[mes] || presupuestoTemplate(); }
 
 // ─────────────────────────── Agregación ───────────────────────────
 function txDelMes() { return TX.filter(t => t.mes === mesActual); }
@@ -299,7 +336,7 @@ function renderCharts() {
     data: { labels: meses.map(m => m.replace('-',' · ')),
       datasets: [
         { label: 'Gasto', data: meses.map(m => porMes[m]), backgroundColor: '#38bdf8', borderRadius: 4 },
-        { label: 'Presupuesto', data: meses.map(m => (PRESUPUESTOS[m]?.total) || 0), backgroundColor: '#334155', borderRadius: 4 }
+        { label: 'Presupuesto', data: meses.map(m => (presupuestoDe(m)?.total) || 0), backgroundColor: '#334155', borderRadius: 4 }
       ] },
     options: { plugins: { legend: { labels: { color: '#94a3b8' } } },
       scales: { y: { ticks: { color: '#64748b', callback: v => money(v) }, grid: { color: '#1f2a44' } },
@@ -357,6 +394,30 @@ function renderPresupuesto() {
   }
 }
 
+function opcionesCategoria(actual) {
+  const lista = [...new Set([...(CATEGORIAS || []), actual].filter(Boolean))].sort();
+  return lista.map(c => `<option ${c === actual ? 'selected' : ''}>${c}</option>`).join('');
+}
+function selectCategoria(t) {
+  const id = t._id || '';
+  return `<select data-cat="${id}" onchange="cambiarCategoria('${id}', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs">${opcionesCategoria(t.categoria)}</select>`;
+}
+window.cambiarCategoria = async (id, nueva) => {
+  const t = TX.find(x => x._id === id);
+  if (!t) return;
+  const previa = t.categoria;
+  t.categoria = nueva;
+  const otros = (CONFIG && CONFIG.otros_nombre) || 'Otros';
+  const k = normDesc(t.descripcion);
+  if (nueva && nueva !== otros) { if (k) APRENDIDAS.set(k, nueva); }
+  else if (k && APRENDIDAS.get(k) === previa) { APRENDIDAS.delete(k); }
+  if (firebase.apps.length && id) {
+    try { await firebase.firestore().collection('transacciones').doc(id).update({ categoria: nueva }); }
+    catch (e) { console.warn('No se pudo actualizar en Firestore:', e.message); }
+  }
+  render();
+};
+
 function renderTabla() {
   const fp = document.getElementById('filtroPersona').value;
   const fc = document.getElementById('filtroCategoria').value;
@@ -373,7 +434,7 @@ function renderTabla() {
       <td class="py-2 pr-3 text-slate-400 whitespace-nowrap">${t.fecha || ''}</td>
       <td class="py-2 pr-3"><span class="px-2 py-0.5 rounded-full text-xs bg-slate-800 text-slate-200">${t.persona}</span></td>
       <td class="py-2 pr-3 text-slate-300">${(t.descripcion||'').replace(/_/g,' ')}</td>
-      <td class="py-2 pr-3 text-xs text-slate-400">${t.categoria}</td>
+      <td class="py-1 pr-3">${selectCategoria(t)}</td>
       <td class="py-2 pr-3 text-xs text-slate-500">${t.lugar || ''}</td>
       <td class="py-2 text-right font-medium whitespace-nowrap ${(t.monto||0) < 0 ? 'text-emerald-400' : 'text-slate-200'}">${money2(t.monto_usd)}${t.moneda !== 'USD' ? '<div class="text-xs text-slate-500 font-normal">'+native(t)+'</div>' : ''}</td>
     </tr>`).join('') || '<tr><td colspan="6" class="py-4 text-center text-slate-500">Sin transacciones</td></tr>';
@@ -383,7 +444,8 @@ function poblarSelectores() {
   const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort().reverse();
   const sel = document.getElementById('mesSel');
   sel.innerHTML = meses.map(m => `<option value="${m}">${m.replace('-',' · ')}</option>`).join('');
-  if (meses.length) mesActual = meses[0];
+  if (!meses.includes(mesActual)) mesActual = meses[0] || null;
+  sel.value = mesActual || '';
 
   const personas = [...new Set(TX.map(t => t.persona))].sort();
   const cats = [...new Set(TX.map(t => t.categoria))].sort();
@@ -403,7 +465,7 @@ function render() {
   document.getElementById('tasaEurLabel').textContent = EUR_USD;
 }
 
-document.getElementById('mesSel').addEventListener('change', e => { mesActual = e.target.value; PRESUPUESTO = PRESUPUESTOS[mesActual] || null; render(); });
+document.getElementById('mesSel').addEventListener('change', e => { mesActual = e.target.value; PRESUPUESTO = presupuestoDe(mesActual); render(); });
 document.getElementById('filtroPersona').addEventListener('change', renderTabla);
 document.getElementById('filtroCategoria').addEventListener('change', renderTabla);
 document.getElementById('filtroTexto').addEventListener('input', renderTabla);
@@ -461,6 +523,10 @@ async function procesarArchivo(file) {
     const buf = await file.arrayBuffer();
     const text = await extraerTextoPdf(buf);
     const res = FinanzasParser.parseBacFromPdfjs(text, cfg);
+    for (const t of res.transacciones) {
+      const k = normDesc(t.descripcion);
+      if (k && APRENDIDAS.has(k)) t.categoria = APRENDIDAS.get(k);
+    }
     PARSED = res;
     REVIEW = res.transacciones.map((t, i) => ({ ...t, _idx: i, _include: true }));
     status.textContent = '';
@@ -557,9 +623,10 @@ document.getElementById('subirGuardar').addEventListener('click', async () => {
 async function recargarTx() {
   if (!firebase.apps.length) return;
   const snap = await firebase.firestore().collection('transacciones').get();
-  if (!snap.empty) { TX = snap.docs.map(d => d.data()); fuente = 'firestore'; }
+  if (!snap.empty) { TX = snap.docs.map(d => Object.assign({}, d.data(), { _id: d.id })); fuente = 'firestore'; }
   const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort().reverse();
   if (meses.length) mesActual = meses[0];
+  construirCatalogos();
   await cargarPresupuesto();
   render();
 }
