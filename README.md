@@ -99,7 +99,11 @@ El **tipo de cambio** USD→CRC se define en dos lugares (mantenlos iguales):
 
 ## Presupuesto mensual
 
-El presupuesto se guarda en Firestore como un documento `presupuesto/YYYY-MM`:
+El presupuesto se guarda en Firestore como un documento `presupuesto/YYYY-MM`.
+**Si un mes no tiene documento propio, el dashboard usa el presupuesto más
+reciente como plantilla**, de modo que todos los meses muestran su presupuesto
+(y su comparación gasto vs. presupuesto) aunque solo exista un doc. Para dar a
+un mes un presupuesto distinto, basta crear su documento `presupuesto/YYYY-MM`.
 
 ```json
 {
@@ -112,6 +116,16 @@ El presupuesto se guarda en Firestore como un documento `presupuesto/YYYY-MM`:
 
 Puedes subirlo con `--presupuesto config/presupuesto.json` o crearlo
 directamente en la consola de Firestore.
+
+## Categorías que aprenden y re-categorización
+
+- Al subir un estado nuevo, cada descripción se compara contra las transacciones
+  ya guardadas; si un comercio ya fue categorizado en meses previos, se le asigna
+  la misma categoría automáticamente (ya no vuelve a caer en "Otros").
+- En la tabla de transacciones, la columna **Categoría** es editable: cambiala y
+  el nuevo valor se guarda en Firestore y queda aprendido para futuras subidas.
+- Si el PDF no trae fecha, el parser la infiere del número de referencia BAC
+  (MMDD al inicio). Es la fecha de registro; puede diferir 1-2 días de la compra.
 
 ## ⚠️ Nota de privacidad
 
