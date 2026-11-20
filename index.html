@@ -72,6 +72,20 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
     <div id="presupuestoCategorias" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3"></div>
   </section>
 
+  <!-- Matriz: gasto por categoría × mes -->
+  <section class="card p-5 mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <h2 class="text-sm font-semibold text-slate-300">Gasto por categoría × mes</h2>
+      <span class="text-xs text-slate-500">Prioridad Alta = gasto por encima del promedio · Tendencia verde = al alza, roja = a la baja</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead id="matrizHead"></thead>
+        <tbody id="matrizBody"></tbody>
+      </table>
+    </div>
+  </section>
+
   <!-- Tabla -->
   <section class="card p-5">
     <div class="flex flex-col md:flex-row md:items-center gap-3 mb-4">
@@ -421,6 +435,86 @@ window.cambiarCategoria = async (id, nueva) => {
   render();
 };
 
+// ── Matriz: gasto por categoría × mes ──
+function matrizCategoriaMes() {
+  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort();
+  const cats = [...new Set(TX.map(t => t.categoria).filter(Boolean))].sort();
+  const cell = {};
+  for (const t of TX) {
+    if (!t.mes || !t.categoria) continue;
+    const k = t.categoria + '|' + t.mes;
+    cell[k] = (cell[k] || 0) + (t.monto_usd || 0);
+  }
+  const filas = cats.map(c => {
+    const serie = meses.map(m => cell[c + '|' + m] ?? null);
+    const valores = serie.filter(v => v != null);
+    const total = valores.reduce((a, b) => a + b, 0);
+    return { categoria: c, serie, total, promedio: valores.length ? total / valores.length : 0 };
+  }).sort((a, b) => b.total - a.total);
+  const totalPorMes = meses.map(m => cats.reduce((s, c) => s + (cell[c + '|' + m] || 0), 0));
+  const granTotal = totalPorMes.reduce((a, b) => a + b, 0);
+  return { meses, filas, totalPorMes, granTotal };
+}
+
+function sparklineSvg(serie, color) {
+  const vals = serie.filter(v => v != null);
+  if (vals.length < 2) return '<span class="text-slate-600 text-xs">—</span>';
+  const w = 64, h = 20, pad = 2;
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const rng = (max - min) || 1;
+  const pts = vals.map((v, i) => {
+    const x = pad + (i / (vals.length - 1)) * (w - 2 * pad);
+    const y = h - pad - ((v - min) / rng) * (h - 2 * pad);
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  }).join(' ');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" class="inline-block"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+function tendenciaInfo(serie) {
+  const vals = serie.filter(v => v != null);
+  if (vals.length < 2) return { color: '#475569', dir: '—' };
+  const a = vals.slice(0, 2).reduce((x, y) => x + y, 0) / 2;
+  const b = vals.slice(-2).reduce((x, y) => x + y, 0) / 2;
+  const sube = b > a;
+  return { color: sube ? '#34d399' : '#f87171', dir: sube ? '↑' : '↓' };
+}
+
+function renderMatriz() {
+  const m = matrizCategoriaMes();
+  const head = document.getElementById('matrizHead');
+  const body = document.getElementById('matrizBody');
+  if (!head || !body) return;
+
+  head.innerHTML = '<tr class="text-left text-slate-500 text-xs uppercase tracking-wide border-b border-slate-700">'
+    + '<th class="py-2 pr-3 sticky left-0 bg-[#111a2e]">Categoría</th>'
+    + '<th class="py-2 pr-3">Prioridad</th>'
+    + '<th class="py-2 pr-3 text-right">Promedio</th>'
+    + '<th class="py-2 pr-3">Tendencia</th>'
+    + '<th class="py-2 pr-3 text-right">Total</th>'
+    + m.meses.map(ms => `<th class="py-2 pr-3 text-right">${ms.replace('-', ' · ')}</th>`).join('')
+    + '</tr>';
+
+  const umbral = m.granTotal / Math.max(1, m.filas.length);
+  body.innerHTML = m.filas.map(f => {
+    const tn = tendenciaInfo(f.serie);
+    const alta = f.total >= umbral;
+    return '<tr class="border-b border-slate-800/60 hover:bg-slate-800/40">'
+      + `<td class="py-1.5 pr-3 font-medium text-slate-200 whitespace-nowrap sticky left-0 bg-[#111a2e]">${f.categoria}</td>`
+      + `<td class="py-1.5 pr-3 text-xs ${alta ? 'text-emerald-400 font-medium' : 'text-slate-500'}">${alta ? 'Alta' : 'Baja'}</td>`
+      + `<td class="py-1.5 pr-3 text-right text-xs text-slate-400">${money(f.promedio)}</td>`
+      + `<td class="py-1.5 pr-3 whitespace-nowrap">${sparklineSvg(f.serie, tn.color)} <span class="text-xs" style="color:${tn.color}">${tn.dir}</span></td>`
+      + `<td class="py-1.5 pr-3 text-right font-medium text-slate-200">${money(f.total)}</td>`
+      + f.serie.map(v => `<td class="py-1.5 pr-3 text-right text-xs ${v == null ? 'text-slate-700' : 'text-slate-400'}">${v == null ? '·' : money(v)}</td>`).join('')
+      + '</tr>';
+  }).join('')
+    + '<tr class="border-t-2 border-slate-600">'
+    + '<td class="py-2 pr-3 font-semibold text-slate-200 whitespace-nowrap sticky left-0 bg-[#111a2e]">Total</td>'
+    + '<td colspan="3"></td>'
+    + `<td class="py-2 pr-3 text-right font-bold text-white">${money(m.granTotal)}</td>`
+    + m.totalPorMes.map(v => `<td class="py-2 pr-3 text-right font-semibold text-slate-200">${money(v)}</td>`).join('')
+    + '</tr>';
+}
+
 function renderTabla() {
   const fp = document.getElementById('filtroPersona').value;
   const fc = document.getElementById('filtroCategoria').value;
@@ -461,6 +555,7 @@ function render() {
   renderKpis();
   renderCharts();
   renderPresupuesto();
+  renderMatriz();
   renderTabla();
   document.getElementById('fuenteBtn').textContent = fuente === 'firestore' ? '● Firestore' : '● datos locales';
   document.getElementById('projId').textContent = FIREBASE_CONFIG.projectId;
