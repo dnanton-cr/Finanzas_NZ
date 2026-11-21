@@ -43,9 +43,10 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
   </header>
 
   <!-- Pestañas -->
-  <div class="flex gap-2 mb-6">
+  <div class="flex flex-wrap gap-2 mb-6">
     <button id="tabResultados" onclick="mostrarPanel('resultados')" class="tab-btn tab-active">📊 Resultados</button>
     <button id="tabIngresar" onclick="mostrarPanel('ingresar')" class="tab-btn">📥 Ingresar datos</button>
+    <button id="tabGuia" onclick="mostrarPanel('guia')" class="tab-btn">❓ Guía</button>
   </div>
 <div id="panelResultados">
   <!-- KPIs -->
@@ -299,6 +300,89 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
     <div id="gmLista" class="mt-2 space-y-1"></div>
   </section>
 
+</div>
+
+<div id="panelGuia" class="hidden">
+  <section class="card p-6 mb-6">
+    <h2 class="text-lg font-bold text-white mb-1">Guía de uso — Finanzas NZ</h2>
+    <p class="text-xs text-slate-500 mb-4">Dashboard de finanzas familiares · Familia Nantón Zapata</p>
+    <p class="text-sm text-slate-300">Finanzas NZ reúne <b>todos los gastos e ingresos de la familia en un solo lugar</b>: los estados de cuenta de las cuatro tarjetas BAC (Daniel, Karin, Iker y Matías), los pagos que no pasan por tarjeta y los ingresos de cada persona por proyecto.</p>
+    <p class="text-sm text-slate-300 mt-3">Abrila en el celular o la computadora: <a href="https://finanzasnz.vercel.app/" target="_blank" class="text-sky-400 hover:underline">finanzasnz.vercel.app</a> · se abre sin usuario ni contraseña.</p>
+  </section>
+
+  <section class="card p-6 mb-6">
+    <h3 class="text-sm font-semibold text-sky-400 mb-3">Las dos pestañas de trabajo</h3>
+    <ul class="space-y-2 text-sm text-slate-300">
+      <li><b>📊 Resultados</b> → para consultar la información.</li>
+      <li><b>📥 Ingresar datos</b> → para cargar movimientos nuevos.</li>
+    </ul>
+    <p class="text-xs text-slate-500 mt-3">Todo lo que se carga aparece al instante en Resultados.</p>
+  </section>
+
+  <section class="card p-6 mb-6">
+    <h3 class="text-sm font-semibold text-sky-400 mb-3">1) Pestaña Resultados</h3>
+    <div class="space-y-3 text-sm text-slate-300">
+      <p><b>Selector de mes</b> (arriba a la derecha): todo lo que ves corresponde al mes elegido.</p>
+      <p><b>Resumen del mes:</b> gasto, ingresos, balance (verde si sobra, rojo si falta), presupuesto (disponible o excedido), top categoría y top persona.</p>
+      <p><b>Gasto vs ingreso por persona:</b> barras y tabla con el neto de cada integrante.</p>
+      <p><b>Gasto por categoría y por persona:</b> en qué se va la plata y cómo se reparte entre los cuatro.</p>
+      <p><b>Evolución del gasto por mes:</b> línea del gasto comparada con la línea punteada del presupuesto.</p>
+      <p><b>Balance (ingreso − gasto) por mes:</b> barras verdes (superávit) y rojas (déficit).</p>
+      <p><b>Evolución del gasto por persona:</b> una línea por integrante para ver tendencias.</p>
+      <p><b>Categorías prioritarias (Alta):</b> las que más pesan y su comercio más frecuente.</p>
+      <p><b>Presupuesto por categoría:</b> barras de avance contra el monto asignado.</p>
+      <p><b>Matriz categoría × mes:</b> prioridad (Alta/Baja), promedio, tendencia (verde sube / rojo baja) y totales.</p>
+      <p><b>Tabla de transacciones:</b> filtrá por persona, categoría o texto, y podés cambiar la categoría de una transacción ahí mismo. El sistema lo aprende.</p>
+    </div>
+  </section>
+
+  <section class="card p-6 mb-6">
+    <h3 class="text-sm font-semibold text-sky-400 mb-3">2) Pestaña Ingresar datos</h3>
+    <div class="space-y-4 text-sm text-slate-300">
+      <div>
+        <p class="font-semibold text-slate-200">a) Estado de cuenta (PDF)</p>
+        <p class="mt-1">Arrastrá el PDF de BAC (o hacé clic para elegirlo). Se procesa en tu navegador. Revisá las líneas: podés desmarcar las que no quieras y corregir persona o categoría. Después presioná <b>Guardar en Firestore</b>. Si subís el mismo archivo otra vez, avisa y no duplica.</p>
+      </div>
+      <div>
+        <p class="font-semibold text-slate-200">b) Subida masiva (CSV)</p>
+        <p class="mt-1">Botones <b>Subir gastos</b> y <b>Subir ingresos</b>, con plantillas descargables.</p>
+        <p class="mt-1 text-xs text-slate-400">Gastos: <code>fecha,persona,descripcion,categoria,moneda,monto</code></p>
+        <p class="text-xs text-slate-400">Ingresos: <code>persona,proyecto,monto,moneda,tipo,fecha</code></p>
+        <p class="mt-1">Antes de guardar muestra una vista previa y marca en rojo las filas con error (esas no se guardan).</p>
+      </div>
+      <div>
+        <p class="font-semibold text-slate-200">c) Agregar un ingreso</p>
+        <p class="mt-1">Persona, proyecto, monto y moneda (USD, CRC o EUR), tipo de cambio, tipo (<b>Mensual</b> cuenta todos los meses, <b>Esporádico</b> solo el mes indicado) y fecha si es esporádico.</p>
+      </div>
+      <div>
+        <p class="font-semibold text-slate-200">d) Gasto manual (sin tarjeta)</p>
+        <p class="mt-1">Para efectivo, transferencias, mensualidades del colegio o mantenimiento de la casa: persona, descripción, categoría, monto, moneda, tipo de cambio y fecha.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card p-6 mb-6">
+    <h3 class="text-sm font-semibold text-sky-400 mb-3">Conceptos clave</h3>
+    <ul class="space-y-2 text-sm text-slate-300 list-disc pl-5">
+      <li><b>Todo en dólares:</b> convierte colones (¢445 = $1) y euros (€1 = $1.08). La tasa se puede ajustar en cada registro.</li>
+      <li><b>Mensual vs esporádico:</b> el mensual se cuenta en todos los meses; el esporádico solo en su mes.</li>
+      <li><b>Presupuesto:</b> hay un presupuesto base que se aplica a cada mes y se compara automáticamente.</li>
+      <li><b>Categorías:</b> 13 categorías + "Otros". La app aprende de tus correcciones.</li>
+      <li><b>Fechas:</b> salen de la referencia del estado de cuenta BAC y pueden variar 1–2 días de la compra real.</li>
+      <li><b>Nada se duplica</b> al subir un estado o archivo repetido.</li>
+    </ul>
+  </section>
+
+  <section class="card p-6">
+    <h3 class="text-sm font-semibold text-sky-400 mb-3">Recomendaciones de uso</h3>
+    <ol class="space-y-2 text-sm text-slate-300 list-decimal pl-5">
+      <li>Subir cada estado de cuenta una vez al mes, apenas salga el corte.</li>
+      <li>Revisar la categoría de los comercios nuevos una sola vez; después se aplica solo.</li>
+      <li>Usar "Gasto manual" para todo lo que no pasa por tarjeta.</li>
+      <li>Registrar los ingresos por proyecto para que el balance sea real.</li>
+      <li>Elegir bien el mes antes de leer los resultados.</li>
+    </ol>
+  </section>
 </div>
   <footer class="text-center text-xs text-slate-600 mt-8 pb-4">
     Finanzas_NZ · datos desde Firebase Firestore (proyecto <span id="projId"></span>) · montos en USD · CRC→USD ¢<span id="tasaLabel"></span> · EUR→USD $<span id="tasaEurLabel"></span>
@@ -1091,14 +1175,17 @@ function poblarSelectores() {
   document.getElementById('filtroCategoria').innerHTML = '<option value="">Todas las categorías</option>' + cats.map(c => `<option>${c}</option>`).join('');
 }
 
-// Cambia entre la pestaña de resultados y la de ingreso de datos.
+// Cambia entre las pestañas: resultados, ingresar datos y guía.
 function mostrarPanel(panel) {
-  const activoIngresar = panel === 'ingresar';
-  document.getElementById('panelResultados').classList.toggle('hidden', activoIngresar);
-  document.getElementById('panelIngresar').classList.toggle('hidden', !activoIngresar);
-  document.getElementById('tabResultados').classList.toggle('tab-active', !activoIngresar);
-  document.getElementById('tabIngresar').classList.toggle('tab-active', activoIngresar);
-  if (!activoIngresar) render(); // recrear gráficos ya con el panel visible (evita charts en 0x0)
+  const paneles = { resultados: 'panelResultados', ingresar: 'panelIngresar', guia: 'panelGuia' };
+  for (const k in paneles) {
+    const el = document.getElementById(paneles[k]);
+    if (el) el.classList.toggle('hidden', k !== panel);
+  }
+  document.getElementById('tabResultados').classList.toggle('tab-active', panel === 'resultados');
+  document.getElementById('tabIngresar').classList.toggle('tab-active', panel === 'ingresar');
+  document.getElementById('tabGuia').classList.toggle('tab-active', panel === 'guia');
+  if (panel === 'resultados') render(); // recrear gráficos ya con el panel visible (evita charts en 0x0)
 }
 window.mostrarPanel = mostrarPanel;
 
