@@ -285,6 +285,25 @@ function construirCatalogos() {
   construirAprendidas();
 }
 
+// Corrige en Firestore los nombres de persona no canónicos (DANIEL LUIS → Daniel, etc.).
+async function corregirPersonas() {
+  if (!firebase.apps.length || !CONFIG || !CONFIG.personas) return;
+  const aCorregir = TX.filter(t =>
+    t.persona && t._id && FinanzasParser.normalizarPersona(t.persona, CONFIG) !== t.persona);
+  if (!aCorregir.length) return;
+  const db = firebase.firestore();
+  let batch = db.batch(); let ops = 0;
+  for (const t of aCorregir) {
+    const correcto = FinanzasParser.normalizarPersona(t.persona, CONFIG);
+    t.persona = correcto;
+    batch.update(db.collection('transacciones').doc(t._id), { persona: correcto });
+    ops++;
+    if (ops % 450 === 0) { await batch.commit(); batch = db.batch(); }
+  }
+  if (ops % 450 !== 0) await batch.commit();
+  console.log('Corregidos ' + ops + ' nombres de persona no canónicos.');
+}
+
 // Carga el registro de estados de cuenta ya subidos (para detectar reenvíos).
 async function cargarEstados() {
   ESTADOS = {};
@@ -359,6 +378,7 @@ async function cargarDatos() {
   if (meses.length) mesActual = meses[0];
   await cargarConfig();
   construirCatalogos();
+  await corregirPersonas();
   await cargarEstados();
   await cargarIngresos();
   await cargarPresupuesto();
@@ -1035,6 +1055,7 @@ async function recargarTx() {
   const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort().reverse();
   if (meses.length) mesActual = meses[0];
   construirCatalogos();
+  await corregirPersonas();
   await cargarIngresos();
   await cargarPresupuesto();
   render();

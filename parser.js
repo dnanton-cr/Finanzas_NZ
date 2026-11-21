@@ -195,5 +195,5 @@
     return { transacciones: tx, noReconocidas };
   }
 
-  return { parseBac, parseBacFromPdfjs, parseMonto, parseFecha, categorizar, aUsd };
+  return { parseBac, parseBacFromPdfjs, parseMonto, parseFecha, categorizar, aUsd, normalizarPersona };
 }));
