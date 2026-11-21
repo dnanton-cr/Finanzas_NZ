@@ -127,6 +127,21 @@ directamente en la consola de Firestore.
 - Si el PDF no trae fecha, el parser la infiere del número de referencia BAC
   (MMDD al inicio). Es la fecha de registro; puede diferir 1-2 días de la compra.
 
+## Ingresos y proyectos
+
+Los aportes se guardan en la colección `ingresos`. Cada registro tiene:
+
+```json
+{ "persona": "Daniel", "proyecto": "Citi CSC", "monto_usd": 5000, "tipo": "recurrente" }
+{ "persona": "Karin", "proyecto": "Administracion propiedades Trigal", "monto_usd": 2000, "tipo": "esporadico", "fecha": "2026-10-30", "mes": "2026-10" }
+```
+
+- `tipo: "recurrente"` suma ese monto a **todos** los meses.
+- `tipo: "esporadico"` suma solo en el `mes` indicado (derivado de `fecha`).
+
+El dashboard compara, por mes y persona, el **gasto** (de `transacciones`) contra el
+**ingreso aportado** (recurrentes + esporádicos) y muestra el balance neto.
+
 ## ⚠️ Nota de privacidad
 
 Las reglas por defecto permiten **lectura pública** de Firestore: cualquiera

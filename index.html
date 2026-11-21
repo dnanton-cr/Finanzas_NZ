@@ -41,7 +41,55 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
   </header>
 
   <!-- KPIs -->
-  <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="kpis"></section>
+  <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6" id="kpis"></section>
+
+  <!-- Gasto vs ingreso por persona -->
+  <section class="card p-5 mb-6">
+    <h2 class="text-sm font-semibold text-slate-300 mb-3">Gasto vs ingreso por persona</h2>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="h-72"><canvas id="chartIngresos"></canvas></div>
+      <div id="comparacionPersonas" class="space-y-3 self-center"></div>
+    </div>
+  </section>
+
+  <!-- Ingresos -->
+  <section class="card p-5 mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <h2 class="text-sm font-semibold text-slate-300">Ingresos</h2>
+      <span class="text-xs text-slate-500">Aportes por persona y proyecto · mensuales o esporádicos</span>
+    </div>
+    <form id="ingresoForm" class="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Persona</label>
+        <select id="ingPersona" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm"></select>
+      </div>
+      <div class="col-span-2">
+        <label class="text-xs text-slate-400 mb-1 block">Proyecto</label>
+        <input id="ingProyecto" list="proyectosList" placeholder="Ej. Citi CSC" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+        <datalist id="proyectosList"></datalist>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Monto USD</label>
+        <input id="ingMonto" type="number" min="0" step="0.01" placeholder="6000" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Tipo</label>
+        <select id="ingTipo" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+          <option value="recurrente">Mensual</option>
+          <option value="esporadico">Esporádico</option>
+        </select>
+      </div>
+      <div id="ingFechaWrap" class="hidden">
+        <label class="text-xs text-slate-400 mb-1 block">Fecha</label>
+        <input id="ingFecha" type="date" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <button type="submit" class="w-full px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm">Agregar</button>
+      </div>
+    </form>
+    <p id="ingresoMsg" class="text-xs mt-2 min-h-4"></p>
+    <div id="ingresosLista" class="mt-2 space-y-1"></div>
+  </section>
 
   <!-- Gráficos -->
   <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
@@ -204,6 +252,8 @@ let APRENDIDAS = new Map();   // descripcion normalizada -> categoria (aprendida
 let CATEGORIAS = [];          // lista completa de categorias (config + datos)
 let ESTADOS = {};             // nombre de archivo ya subido -> {fecha, n_tx}
 let NOMBRE_ACTUAL = null;     // archivo en revisión
+let INGRESOS = [];            // aportes {_id, persona, proyecto, monto_usd, tipo, fecha?, mes?}
+let PROYECTOS = [];           // lista de proyectos
 
 const money = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
 const money2 = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -248,6 +298,43 @@ async function cargarEstados() {
   } catch (e) { console.warn('No se pudo leer el registro de estados subidos:', e.message); }
 }
 
+// Carga los ingresos (aportes) y arma la lista de proyectos.
+async function cargarIngresos() {
+  INGRESOS = [];
+  if (firebase.apps.length) {
+    try {
+      const snap = await firebase.firestore().collection('ingresos').get();
+      INGRESOS = snap.docs.map(d => Object.assign({}, d.data(), { _id: d.id }));
+    } catch (e) { console.warn('No se pudieron leer los ingresos:', e.message); }
+  }
+  PROYECTOS = [...new Set(INGRESOS.map(i => i.proyecto).filter(Boolean))].sort();
+}
+
+function listaPersonas() {
+  const cfg = (CONFIG && CONFIG.personas) ? Object.values(CONFIG.personas) : [];
+  const s = new Set([...cfg, ...TX.map(t => t.persona), ...INGRESOS.map(i => i.persona)].filter(Boolean));
+  return [...s].sort();
+}
+
+// Aporte mensual de una persona: recurrentes (siempre) + esporádicos del mes.
+function ingresoPersonaMes(persona, mes) {
+  let total = 0;
+  for (const i of INGRESOS) {
+    if (i.persona !== persona) continue;
+    if (i.tipo === 'recurrente') total += i.monto_usd || 0;
+    else if (i.mes === mes) total += i.monto_usd || 0;
+  }
+  return total;
+}
+function ingresoTotalMes(mes) {
+  let total = 0;
+  for (const i of INGRESOS) {
+    if (i.tipo === 'recurrente') total += i.monto_usd || 0;
+    else if (i.mes === mes) total += i.monto_usd || 0;
+  }
+  return total;
+}
+
 // ─────────────────────────── Carga de datos ───────────────────────────
 async function cargarDatos() {
   if (USAR_FIREBASE && FIREBASE_CONFIG.apiKey) {
@@ -273,6 +360,7 @@ async function cargarDatos() {
   await cargarConfig();
   construirCatalogos();
   await cargarEstados();
+  await cargarIngresos();
   await cargarPresupuesto();
   render();
 }
@@ -337,9 +425,14 @@ function renderKpis() {
   const topPer = Object.entries(porPer).sort((a,b) => b[1]-a[1])[0];
   const presupTotal = PRESUPUESTO?.total ?? null;
   const dif = presupTotal != null ? total - presupTotal : null;
+  const ingMes = ingresoTotalMes(mesActual);
+  const balance = ingMes - total;
 
   const kpis = [
     { label: 'Gasto del mes', valor: money(total), sub: `${txs.length} transacciones` },
+    { label: 'Ingresos del mes', valor: money(ingMes), sub: 'aportes (mensuales + esporádicos)' },
+    { label: 'Balance del mes', valor: money(balance), sub: balance >= 0 ? 'positivo' : 'negativo',
+      color: balance >= 0 ? 'text-emerald-400' : 'text-rose-400' },
     { label: 'Presupuesto', valor: presupTotal != null ? money(presupTotal) : '—', sub: dif != null
         ? (dif <= 0 ? `Disponible ${money(-dif)}` : `Excedido ${money(dif)}`) : 'sin presupuesto',
       color: dif != null && dif > 0 ? 'text-rose-400' : 'text-emerald-400' },
@@ -514,6 +607,60 @@ function renderAltas() {
     return '<div class="flex items-center justify-between gap-3 text-sm border-b border-slate-800/60 pb-2">'
       + '<span class="text-slate-300 font-medium">' + c + '</span>'
       + '<span class="text-xs text-slate-400 text-right">' + titleCase(top.nombre) + ' · ' + top.total + ' tx · ~' + top.avg + '/mes</span>'
+      + '</div>';
+  }).join('');
+}
+
+function renderIngresos() {
+  const sel = document.getElementById('ingPersona');
+  if (sel) sel.innerHTML = listaPersonas().map(p => `<option>${p}</option>`).join('');
+  const dl = document.getElementById('proyectosList');
+  if (dl) dl.innerHTML = PROYECTOS.map(p => `<option value="${p}"></option>`).join('');
+  const cont = document.getElementById('ingresosLista');
+  if (!cont) return;
+  if (!INGRESOS.length) {
+    cont.innerHTML = '<p class="text-sm text-slate-500">Sin ingresos registrados. Agregá el primero arriba.</p>';
+    return;
+  }
+  cont.innerHTML = INGRESOS.map(i => {
+    const rec = i.tipo === 'recurrente';
+    return '<div class="flex items-center justify-between gap-3 text-sm py-1.5 border-b border-slate-800/50">'
+      + '<span class="text-slate-200 font-medium w-20 shrink-0">' + i.persona + '</span>'
+      + '<span class="text-slate-300 flex-1 truncate">' + (i.proyecto || '—') + '</span>'
+      + '<span class="text-xs shrink-0 ' + (rec ? 'text-sky-400' : 'text-amber-400') + '">' + (rec ? 'Mensual' : (i.fecha || 'Esporádico')) + '</span>'
+      + '<span class="text-slate-200 font-medium shrink-0">' + money(i.monto_usd) + '</span>'
+      + '<button onclick="borrarIngreso(\'' + i._id + '\')" class="text-xs text-rose-400 hover:text-rose-300 shrink-0" title="Borrar">✕</button>'
+      + '</div>';
+  }).join('');
+}
+
+function renderComparacion() {
+  const personas = listaPersonas();
+  const gastoPor = agregar(t => t.persona, txDelMes());
+  const gastos = personas.map(p => gastoPor[p] || 0);
+  const ingresos = personas.map(p => ingresoPersonaMes(p, mesActual));
+  mkChart('chartIngresos', {
+    type: 'bar',
+    data: { labels: personas, datasets: [
+      { label: 'Gasto', data: gastos, backgroundColor: '#f87171', borderRadius: 4 },
+      { label: 'Ingreso', data: ingresos, backgroundColor: '#34d399', borderRadius: 4 }
+    ]},
+    options: { plugins: { legend: { labels: { color: '#94a3b8' } } },
+      scales: { y: { ticks: { color: '#64748b', callback: v => money(v) }, grid: { color: '#1f2a44' } },
+                x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
+  });
+  const cont = document.getElementById('comparacionPersonas');
+  if (!cont) return;
+  cont.innerHTML = personas.map(p => {
+    const g = gastoPor[p] || 0;
+    const ing = ingresoPersonaMes(p, mesActual);
+    const neto = ing - g;
+    const color = neto >= 0 ? 'text-emerald-400' : 'text-rose-400';
+    return '<div class="flex items-center justify-between gap-3 text-sm border-b border-slate-800/60 pb-2">'
+      + '<span class="text-slate-200 font-medium w-20 shrink-0">' + p + '</span>'
+      + '<span class="text-xs text-slate-400 shrink-0">Gasto ' + money(g) + '</span>'
+      + '<span class="text-xs text-slate-400 shrink-0">Ingreso ' + money(ing) + '</span>'
+      + '<span class="text-sm font-semibold shrink-0 ' + color + '">' + money(neto) + '</span>'
       + '</div>';
   }).join('');
 }
@@ -696,6 +843,8 @@ function poblarSelectores() {
 function render() {
   poblarSelectores();
   renderKpis();
+  renderIngresos();
+  renderComparacion();
   renderCharts();
   renderPersonasMes();
   renderAltas();
@@ -886,9 +1035,52 @@ async function recargarTx() {
   const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort().reverse();
   if (meses.length) mesActual = meses[0];
   construirCatalogos();
+  await cargarIngresos();
   await cargarPresupuesto();
   render();
 }
+
+// ── Ingresos: formulario y acciones ──
+document.getElementById('ingTipo').addEventListener('change', e => {
+  document.getElementById('ingFechaWrap').classList.toggle('hidden', e.target.value !== 'esporadico');
+});
+document.getElementById('ingresoForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('ingresoMsg');
+  const base = 'text-xs mt-2 min-h-4';
+  msg.textContent = ''; msg.className = base;
+  const persona = document.getElementById('ingPersona').value;
+  const proyecto = document.getElementById('ingProyecto').value.trim();
+  const monto = parseFloat(document.getElementById('ingMonto').value);
+  const tipo = document.getElementById('ingTipo').value;
+  const fecha = document.getElementById('ingFecha').value;
+  if (!persona) { msg.textContent = 'Elegí la persona.'; return; }
+  if (!proyecto) { msg.textContent = 'Escribí el proyecto.'; return; }
+  if (!(monto > 0)) { msg.textContent = 'Escribí un monto mayor a 0.'; return; }
+  if (tipo === 'esporadico' && !fecha) { msg.textContent = 'Para un aporte esporádico elegí la fecha.'; return; }
+  if (!firebase.apps.length) { msg.textContent = 'Firebase no disponible.'; return; }
+  const doc = { persona, proyecto, monto_usd: monto, tipo };
+  if (tipo === 'esporadico') { doc.fecha = fecha; doc.mes = fecha.slice(0, 7); }
+  try {
+    await firebase.firestore().collection('ingresos').add(doc);
+    document.getElementById('ingProyecto').value = '';
+    document.getElementById('ingMonto').value = '';
+    await cargarIngresos();
+    render();
+    msg.textContent = 'Ingreso agregado.'; msg.className = base + ' text-emerald-400';
+  } catch (err) {
+    msg.textContent = 'Error al guardar: ' + err.message; msg.className = base + ' text-rose-400';
+  }
+});
+window.borrarIngreso = async (id) => {
+  if (!firebase.apps.length || !id) return;
+  if (!confirm('¿Borrar este ingreso?')) return;
+  try {
+    await firebase.firestore().collection('ingresos').doc(id).delete();
+    await cargarIngresos();
+    render();
+  } catch (e) { console.warn('No se pudo borrar el ingreso:', e.message); }
+};
 
 cargarDatos();
 </script>
