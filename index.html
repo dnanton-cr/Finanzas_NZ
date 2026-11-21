@@ -60,6 +60,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
       <select id="mesSel" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none"></select>
       <button id="fuenteBtn" class="text-xs px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400"></button>
       <span id="userBadge" class="hidden items-center gap-2"></span>
+      <span id="corteBadge" class="hidden text-xs px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-sky-300"></span>
     </div>
   </header>
 
@@ -275,13 +276,13 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
     <div id="ingresosLista" class="mt-2 space-y-1"></div>
     <div class="flex flex-wrap items-end gap-3 mt-4 pt-4 border-t border-slate-800">
       <div>
-        <label class="text-xs text-slate-400 mb-1 block">Ingresos registrados desde</label>
+        <label class="text-xs text-slate-400 mb-1 block">Mostrar datos desde</label>
         <input id="ingDesde" type="month" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
       </div>
       <button id="ingDesdeGuardar" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm">Guardar</button>
       <span id="ingDesdeMsg" class="text-xs"></span>
     </div>
-    <p class="text-xs text-slate-500 mt-2">Los meses anteriores a esta fecha se excluyen del balance y del gráfico histórico (útil si migraste gastos viejos sin ingresos).</p>
+    <p class="text-xs text-slate-500 mt-2">Los meses anteriores a esta fecha se excluyen de <b>todos</b> los gráficos históricos, la matriz y el balance. También marca desde cuándo hay ingresos registrados (útil si migraste gastos viejos).</p>
   </section>
   <!-- Gasto manual (sin tarjeta) -->
   <section class="card p-5 mb-6">
@@ -402,7 +403,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
       <li><b>Categorías:</b> 13 categorías + "Otros". La app aprende de tus correcciones.</li>
       <li><b>Fechas:</b> salen de la referencia del estado de cuenta BAC y pueden variar 1–2 días de la compra real.</li>
       <li><b>Nada se duplica</b> al subir un estado o archivo repetido.</li>
-      <li><b>Corte de ingresos:</b> si migraste gastos de años anteriores, definí <b>"Ingresos registrados desde"</b> en <i>Ingresar datos</i>; los meses anteriores se excluyen del balance.</li>
+      <li><b>Mostrar datos desde:</b> si migraste gastos de años anteriores, definí esa fecha en <i>Ingresar datos</i>; los meses anteriores se excluyen de todos los gráficos históricos, la matriz y el balance.</li>
     </ul>
   </section>
 
@@ -665,6 +666,8 @@ function primerMesIngresoDerivado() {
   return min;
 }
 function corteIngresos() { return INGRESO_DESDE || primerMesIngresoDerivado(); }
+// ¿El mes entra en la ventana de análisis? (meses anteriores al corte se ocultan)
+function dentroDelCorte(m) { const c = corteIngresos(); return !c || !m || m >= c; }
 
 function listaPersonas() {
   const cfg = (CONFIG && CONFIG.personas) ? Object.values(CONFIG.personas) : [];
@@ -839,7 +842,7 @@ function renderCharts() {
 
   // Evolución mensual (todos los datos) — gasto vs presupuesto
   const porMes = agregar(t => t.mes, TX);
-  const meses = Object.keys(porMes).sort();
+  const meses = Object.keys(porMes).filter(Boolean).filter(dentroDelCorte).sort();
   mkChart('chartMeses', {
     type: 'line',
     data: { labels: meses.map(m => nombreMes(m)),
@@ -908,7 +911,7 @@ function barra(actual, presup) {
 
 // Evolución mensual del gasto por persona (una línea por integrante)
 function renderPersonasMes() {
-  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort();
+  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].filter(dentroDelCorte).sort();
   const personas = [...new Set(TX.map(t => t.persona).filter(Boolean))].sort();
   const colorPer = { 'Daniel': '#38bdf8', 'Matías': '#34d399', 'Karin': '#f472b6', 'Iker': '#fbbf24' };
   const paleta = ['#38bdf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa', '#fb923c', '#22d3ee'];
@@ -942,11 +945,12 @@ function renderPersonasMes() {
 }
 
 function categoriasAlta() {
-  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort();
+  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].filter(dentroDelCorte).sort();
   const cats = [...new Set(TX.map(t => t.categoria).filter(Boolean))];
   const tot = {}, cell = {};
   for (const t of TX) {
     if (!t.categoria) continue;
+    if (!dentroDelCorte(t.mes)) continue;
     tot[t.categoria] = (tot[t.categoria] || 0) + (t.monto_usd || 0);
     if (t.mes) { const k = t.categoria + '|' + t.mes; cell[k] = (cell[k] || 0) + (t.monto_usd || 0); }
   }
@@ -969,6 +973,7 @@ function comercioTop(categoria) {
   const cuenta = {};
   for (const t of TX) {
     if (t.categoria !== categoria) continue;
+    if (!dentroDelCorte(t.mes)) continue;
     const c = limpiarComercio(t.descripcion);
     if (!c) continue;
     cuenta[c] = cuenta[c] || { total: 0, meses: new Set() };
@@ -1215,11 +1220,12 @@ window.cambiarCategoria = async (id, nueva) => {
 
 // ── Matriz: gasto por categoría × mes ──
 function matrizCategoriaMes() {
-  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort();
+  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].filter(dentroDelCorte).sort();
   const cats = [...new Set(TX.map(t => t.categoria).filter(Boolean))].sort();
   const cell = {};
   for (const t of TX) {
     if (!t.mes || !t.categoria) continue;
+    if (!dentroDelCorte(t.mes)) continue;
     const k = t.categoria + '|' + t.mes;
     cell[k] = (cell[k] || 0) + (t.monto_usd || 0);
   }
@@ -1316,7 +1322,9 @@ function renderTabla() {
 }
 
 function poblarSelectores() {
-  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort().reverse();
+  const todos = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort().reverse();
+  const visibles = todos.filter(dentroDelCorte);
+  const meses = visibles.length ? visibles : todos;
   const sel = document.getElementById('mesSel');
   sel.innerHTML = meses.map(m => `<option value="${m}">${nombreMes(m)}</option>`).join('');
   if (!meses.includes(mesActual)) mesActual = meses[0] || null;
@@ -1359,6 +1367,12 @@ function render() {
   document.getElementById('projId').textContent = FIREBASE_CONFIG.projectId;
   document.getElementById('tasaLabel').textContent = USD_CRC;
   document.getElementById('tasaEurLabel').textContent = EUR_USD;
+  const cb = document.getElementById('corteBadge');
+  const corte = corteIngresos();
+  if (cb) {
+    if (corte) { cb.textContent = 'Análisis desde ' + nombreMes(corte); cb.classList.remove('hidden'); }
+    else cb.classList.add('hidden');
+  }
 }
 
 document.getElementById('mesSel').addEventListener('change', e => { mesActual = e.target.value; PRESUPUESTO = presupuestoDe(mesActual); render(); });
