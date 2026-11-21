@@ -66,6 +66,12 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
     </div>
   </section>
 
+  <!-- Evolución del gasto por persona -->
+  <section class="card p-5 mb-6">
+    <h2 class="text-sm font-semibold text-slate-300 mb-3">Evolución del gasto por persona</h2>
+    <div class="h-64"><canvas id="chartPersonasMes"></canvas></div>
+  </section>
+
   <!-- Presupuesto por categoría -->
   <section class="card p-5 mb-6">
     <h2 class="text-sm font-semibold text-slate-300 mb-3">Presupuesto por categoría</h2>
@@ -375,6 +381,41 @@ function barra(actual, presup) {
     </div>`;
 }
 
+// Evolución mensual del gasto por persona (una línea por integrante)
+function renderPersonasMes() {
+  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort();
+  const personas = [...new Set(TX.map(t => t.persona).filter(Boolean))].sort();
+  const colorPer = { 'Daniel': '#38bdf8', 'Matías': '#34d399', 'Karin': '#f472b6', 'Iker': '#fbbf24' };
+  const paleta = ['#38bdf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa', '#fb923c', '#22d3ee'];
+  const cell = {};
+  for (const t of TX) {
+    if (!t.mes || !t.persona) continue;
+    const k = t.persona + '|' + t.mes;
+    cell[k] = (cell[k] || 0) + (t.monto_usd || 0);
+  }
+  const datasets = personas.map((p, i) => {
+    const c = colorPer[p] || paleta[i % paleta.length];
+    return {
+      label: p,
+      data: meses.map(m => cell[p + '|' + m] || 0),
+      borderColor: c,
+      backgroundColor: c + '22',
+      fill: false,
+      tension: 0.35,
+      borderWidth: 2,
+      pointRadius: 3,
+      pointBackgroundColor: c
+    };
+  });
+  mkChart('chartPersonasMes', {
+    type: 'line',
+    data: { labels: meses.map(m => m.replace('-', ' · ')), datasets },
+    options: { plugins: { legend: { labels: { color: '#94a3b8' } } },
+      scales: { y: { ticks: { color: '#64748b', callback: v => money(v) }, grid: { color: '#1f2a44' } },
+                x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
+  });
+}
+
 function renderPresupuesto() {
   const txs = txDelMes();
   const porPer = agregar(t => t.persona, txs);
@@ -554,6 +595,7 @@ function render() {
   poblarSelectores();
   renderKpis();
   renderCharts();
+  renderPersonasMes();
   renderPresupuesto();
   renderMatriz();
   renderTabla();
