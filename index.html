@@ -183,7 +183,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
     <div class="text-xs text-slate-500 leading-relaxed">
       <b>Gastos</b> → <code>fecha,persona,descripcion,categoria,moneda,monto</code> ·
       <b>Ingresos</b> → <code>persona,proyecto,monto,moneda,tipo,fecha</code><br>
-      Primera fila = encabezados · <code>moneda</code> = CRC/USD/EUR (USD por defecto) · <code>fecha</code> = AAAA-MM-DD · <code>monto</code> sin separador de miles (ej. 530425) · <code>tipo</code> = mensual o esporadico (esporadico requiere fecha) ·
+      Primera fila = encabezados · <code>moneda</code> = CRC/USD/EUR (USD por defecto) · <code>fecha</code> = AAAA-MM-DD o DD/MM/AAAA · <code>monto</code> sin separador de miles (ej. 530425) · <code>tipo</code> = mensual o esporadico (esporadico requiere fecha) ·
       <span class="text-sky-400 cursor-pointer hover:underline" onclick="descargarPlantilla('gastos')">plantilla gastos</span> ·
       <span class="text-violet-400 cursor-pointer hover:underline" onclick="descargarPlantilla('ingresos')">plantilla ingresos</span>
     </div>
@@ -348,6 +348,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
         <p class="mt-1">Botones <b>Subir gastos</b> y <b>Subir ingresos</b>, con plantillas descargables.</p>
         <p class="mt-1 text-xs text-slate-400">Gastos: <code>fecha,persona,descripcion,categoria,moneda,monto</code></p>
         <p class="text-xs text-slate-400">Ingresos: <code>persona,proyecto,monto,moneda,tipo,fecha</code></p>
+        <p class="mt-1">La fecha puede ser <code>AAAA-MM-DD</code> (2026-02-15) o <code>DD/MM/AAAA</code> (15/02/2026). Si es ambigua (ej. 02/03/2026), se toma como día/mes.</p>
         <p class="mt-1">Antes de guardar muestra una vista previa y marca en rojo las filas con error (esas no se guardan).</p>
       </div>
       <div>
@@ -1502,6 +1503,26 @@ function normalizarPersonaCsv(p) {
   const match = listaPersonas().find(x => x.toLowerCase() === s.toLowerCase());
   return match || s;
 }
+// Acepta AAAA-MM-DD, DD/MM/AAAA o MM/DD/AAAA y devuelve AAAA-MM-DD (o null si es inválida).
+// Si es ambigua (día y mes ≤ 12), se interpreta como DD/MM (formato de Costa Rica).
+function parsearFecha(s) {
+  const t = String(s || '').trim();
+  if (!t) return null;
+  const iso = t.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+  const dmy = t.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})$/);
+  let y, mo, d;
+  if (iso) { y = +iso[1]; mo = +iso[2]; d = +iso[3]; }
+  else if (dmy) {
+    const a = +dmy[1], b = +dmy[2]; y = +dmy[3];
+    if (y < 100) y += 2000;
+    if (a > 12 && b <= 12) { d = a; mo = b; }        // 15/02 -> día/mes
+    else if (b > 12 && a <= 12) { mo = a; d = b; }   // 02/15 -> mes/día
+    else { d = a; mo = b; }                          // ambiguo -> día/mes (CR)
+  } else return null;
+  const dt = new Date(y, mo - 1, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+  return String(y).padStart(4, '0') + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+}
 function parsearCsv(texto) {
   const comas = (texto.match(/,/g) || []).length;
   const ptos = (texto.match(/;/g) || []).length;
@@ -1545,14 +1566,15 @@ function filaAGasto(cols, fila) {
   const monto = parseFloat(String(rec.monto || '').replace(/[^0-9.\-]/g, ''));
   const moneda = (rec.moneda || 'USD').toUpperCase();
   const tasa = parseFloat(rec.tasa) || 0;
-  const fecha = (rec.fecha || '').trim();
+  const fechaRaw = (rec.fecha || '').trim();
+  const fecha = parsearFecha(fechaRaw);
   if (!persona) errores.push('sin persona');
   if (!descripcion) errores.push('sin descripción');
   if (!(monto > 0)) errores.push('monto inválido');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) errores.push('fecha inválida (AAAA-MM-DD)');
+  if (!fecha) errores.push('fecha inválida (AAAA-MM-DD o DD/MM/AAAA)');
   if (!['CRC', 'USD', 'EUR'].includes(moneda)) errores.push('moneda inválida');
   const monto_usd = monto > 0 ? convertirAUsd(monto, moneda, tasa) : 0;
-  return { errores, datos: { fecha, mes: /^\d{4}-\d{2}/.test(fecha) ? fecha.slice(0, 7) : null, persona, descripcion, categoria, moneda, monto, monto_usd, manual: true, lugar: null, tarjeta: null, referencia: null } };
+  return { errores, datos: { fecha: fecha || fechaRaw, mes: fecha ? fecha.slice(0, 7) : null, persona, descripcion, categoria, moneda, monto, monto_usd, manual: true, lugar: null, tarjeta: null, referencia: null } };
 }
 function filaAIngreso(cols, fila) {
   const rec = {};
@@ -1567,14 +1589,15 @@ function filaAIngreso(cols, fila) {
   const tasa = parseFloat(rec.tasa) || 0;
   let tipo = String(rec.tipo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   tipo = (tipo === 'recurrente' || tipo === 'mensual') ? 'recurrente' : 'esporadico';
-  const fecha = (rec.fecha || '').trim();
+  const fechaRaw = (rec.fecha || '').trim();
+  const fecha = parsearFecha(fechaRaw);
   if (!persona) errores.push('sin persona');
   if (!proyecto) errores.push('sin proyecto');
   if (!(monto > 0)) errores.push('monto inválido');
   if (!['CRC', 'USD', 'EUR'].includes(moneda)) errores.push('moneda inválida');
   const datos = { persona, proyecto, moneda, monto, monto_usd: monto > 0 ? convertirAUsd(monto, moneda, tasa) : 0, tipo };
   if (tipo === 'esporadico') {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) errores.push('esporádico requiere fecha AAAA-MM-DD');
+    if (!fecha) errores.push('esporádico requiere fecha válida (AAAA-MM-DD o DD/MM/AAAA)');
     else { datos.fecha = fecha; datos.mes = fecha.slice(0, 7); }
   }
   return { errores, datos };
@@ -1611,8 +1634,8 @@ function mostrarCsvPreview() {
 }
 window.descargarPlantilla = (tipo) => {
   const contenido = tipo === 'gastos'
-    ? 'fecha,persona,descripcion,categoria,moneda,monto\n2026-11-01,Daniel,Mantenimiento casa,Otros,USD,300\n2026-11-02,Iker,Colegio Humboldt,Educacion,CRC,530425'
-    : 'persona,proyecto,monto,moneda,tipo,fecha\nDaniel,Citi CSC,5000,USD,mensual,\nKarin,Administracion propiedades Trigal,2000,USD,esporadico,2026-10-30';
+    ? 'fecha,persona,descripcion,categoria,moneda,monto\n15/11/2026,Daniel,Mantenimiento casa,Otros,USD,300\n23/11/2026,Iker,Colegio Humboldt,Educacion,CRC,530425'
+    : 'persona,proyecto,monto,moneda,tipo,fecha\nDaniel,Citi CSC,5000,USD,mensual,\nKarin,Administracion propiedades Trigal,2000,USD,esporadico,30/10/2026';
   const blob = new Blob(['\uFEFF' + contenido], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);

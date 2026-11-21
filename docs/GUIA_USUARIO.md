@@ -104,6 +104,8 @@ Columnas:
 - **Gastos:** `fecha, persona, descripcion, categoria, moneda, monto`
 - **Ingresos:** `persona, proyecto, monto, moneda, tipo, fecha`
 
+La **fecha** se puede escribir como `AAAA-MM-DD` (2026-02-15) o `DD/MM/AAAA` (15/02/2026). Si es ambigua (ej. `02/03/2026`), se interpreta como **día/mes**.
+
 Antes de guardar muestra una **vista previa** y marca en rojo las filas con error (esas no se guardan).
 
 ### c) Agregar un ingreso
