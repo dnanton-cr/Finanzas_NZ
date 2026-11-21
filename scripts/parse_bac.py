@@ -22,7 +22,7 @@ from pathlib import Path
 
 MESES = {
     "ENE": 1, "FEB": 2, "MAR": 3, "ABR": 4, "MAY": 5, "JUN": 6,
-    "JUL": 7, "AGO": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DIC": 12,
+    "JUL": 7, "AGO": 8, "SEP": 9, "SET": 9, "OCT": 10, "NOV": 11, "DIC": 12,
 }
 
 PAISES = {
@@ -40,7 +40,7 @@ NOISE = {
 
 CARD_RE = re.compile(r"^\*{6,}(\d{4})$")
 REF_RE = re.compile(r"^\d{9,14}$")
-DATE_RE = re.compile(r"^(\d{1,2})-(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)-(\d{2})$", re.I)
+DATE_RE = re.compile(r"^(\d{1,2})-(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|SET|OCT|NOV|DIC)-(\d{2})$", re.I)
 
 
 def parse_monto(s: str):
@@ -65,8 +65,21 @@ def parse_fecha(s: str):
     return f"{anio:04d}-{mes:02d}-{dia:02d}"
 
 
-def fecha_desde_referencia(ref: str, anio: int = None):
+def extraer_periodo(texto: str):
+    """Extrae el mes de corte y el año del estado de cuenta desde la cabecera del PDF."""
+    t = texto or ""
+    m = re.search(r"estado de cuenta[:\s]*([A-Z]{3})-(\d{4})", t, re.I)
+    if m:
+        return {"anio": int(m.group(2)), "mes_corte": MESES.get(m.group(1).upper())}
+    m = re.search(r"Fecha de corte[:\s]*\d{1,2}-([A-Z]{3})-(\d{2})", t, re.I)
+    if m:
+        return {"anio": 2000 + int(m.group(2)), "mes_corte": MESES.get(m.group(1).upper())}
+    return None
+
+
+def fecha_desde_referencia(ref: str, periodo: dict = None):
     """Si el PDF no trae fecha, se infiere del número de referencia BAC (MMDD al inicio).
+    Usa el año del estado de cuenta (no el año actual), corrigiendo el cruce de año.
     Es la fecha de registro BAC; puede diferir 1-2 días de la fecha de compra."""
     m = re.match(r"^(\d{2})(\d{2})\d+$", (ref or "").strip())
     if not m:
@@ -74,8 +87,12 @@ def fecha_desde_referencia(ref: str, anio: int = None):
     mm, dd = int(m.group(1)), int(m.group(2))
     if not (1 <= mm <= 12 and 1 <= dd <= 31):
         return None
-    from datetime import date
-    anio = anio or date.today().year
+    if periodo and periodo.get("anio"):
+        mes_corte = periodo.get("mes_corte") or 12
+        anio = periodo["anio"] - 1 if mm > mes_corte else periodo["anio"]
+    else:
+        from datetime import date
+        anio = date.today().year
     return f"{anio:04d}-{mm:02d}-{dd:02d}"
 
 
@@ -113,6 +130,7 @@ def extraer_texto(pdf_path: str):
 
 
 def parsear(texto: str, config: dict):
+    periodo = extraer_periodo(texto)
     lines = texto.split("\n")
 
     # Localizar la sección B) Detalle de compras
@@ -177,7 +195,7 @@ def parsear(texto: str, config: dict):
             i += 1
             if i >= n:
                 break
-            fecha = parse_fecha(limpio[i]) or fecha_desde_referencia(ref)
+            fecha = parse_fecha(limpio[i]) or fecha_desde_referencia(ref, periodo)
             i += 1
             desc_parts = []
             while i < n and limpio[i] not in ("USD", "CRC", "EUR") and not REF_RE.match(limpio[i]):

@@ -8,12 +8,12 @@
   else root.FinanzasParser = factory();
 }(typeof self !== 'undefined' ? self : this, function () {
 
-  const MESES = { ENE:1,FEB:2,MAR:3,ABR:4,MAY:5,JUN:6,JUL:7,AGO:8,SEP:9,OCT:10,NOV:11,DIC:12 };
+  const MESES = { ENE:1,FEB:2,MAR:3,ABR:4,MAY:5,JUN:6,JUL:7,AGO:8,SEP:9,SET:9,OCT:10,NOV:11,DIC:12 };
   const PAISES = { DEU:'Alemania',CRI:'Costa Rica',USA:'Estados Unidos',SGP:'Singapur',LUX:'Luxemburgo',LTU:'Lituania',HKG:'Hong Kong',NLD:'Países Bajos',GBR:'Reino Unido' };
   const NOISE = new Set(['TARJETA DE CREDITO','N. Referencia','Fecha de pago','Concepto/Descripción','Lugar','Moneda','Monto en colones','Monto en dólares','Movimientos de la tarjeta de crédito']);
   const CARD_RE = /^\*{6,}(\d{4})$/;
   const REF_RE = /^\d{9,14}$/;
-  const DATE_RE = /^(\d{1,2})-(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)-(\d{2})$/i;
+  const DATE_RE = /^(\d{1,2})-(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|SET|OCT|NOV|DIC)-(\d{2})$/i;
   const PAD = n => String(n).padStart(2, '0');
 
   function parseMonto(s) {
@@ -30,13 +30,30 @@
     return (2000 + parseInt(m[3], 10)) + '-' + PAD(MESES[m[2].toUpperCase()]) + '-' + PAD(parseInt(m[1], 10));
   }
 
+  // Extrae el mes de corte y el año del estado de cuenta desde la cabecera del PDF.
+  function extraerPeriodo(texto) {
+    const t = String(texto || '');
+    let m = /estado de cuenta[:\s]*([A-Z]{3})-(\d{4})/i.exec(t);
+    if (m) return { anio: parseInt(m[2], 10), mesCorte: MESES[(m[1] || '').toUpperCase()] || null };
+    m = /Fecha de corte[:\s]*\d{1,2}-([A-Z]{3})-(\d{2})/i.exec(t);
+    if (m) return { anio: 2000 + parseInt(m[2], 10), mesCorte: MESES[(m[1] || '').toUpperCase()] || null };
+    return null;
+  }
+
   // Si el PDF no trae fecha, se infiere del número de referencia BAC (MMDD al inicio).
-  function fechaDesdeReferencia(ref, anio) {
+  // Usa el año del estado de cuenta (no el año actual), corrigiendo el cruce de año.
+  function fechaDesdeReferencia(ref, periodo) {
     const m = /^(\d{2})(\d{2})\d+$/.exec(String(ref || '').trim());
     if (!m) return null;
     const mm = parseInt(m[1], 10), dd = parseInt(m[2], 10);
     if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
-    const a = anio || new Date().getFullYear();
+    let a;
+    if (periodo && periodo.anio) {
+      const mc = periodo.mesCorte || 12;
+      a = (mm > mc) ? periodo.anio - 1 : periodo.anio;  // mes de registro posterior al corte → año anterior
+    } else {
+      a = new Date().getFullYear();
+    }
     return a + '-' + PAD(mm) + '-' + PAD(dd);
   }
 
@@ -73,6 +90,7 @@
 
   // ── parseo del texto "un campo por línea" (pymupdf) ──
   function parseBac(texto, cfg) {
+    const periodo = extraerPeriodo(texto);
     const lines = String(texto).split('\n');
     let start = -1, end = -1;
     for (let i = 0; i < lines.length; i++) {
@@ -109,7 +127,7 @@
         if (!REF_RE.test(limpio[i])) { i++; continue; }
         const ref = limpio[i]; i++;
         if (i >= n) break;
-        const fecha = parseFecha(limpio[i]) || fechaDesdeReferencia(ref); i++;
+        const fecha = parseFecha(limpio[i]) || fechaDesdeReferencia(ref, periodo); i++;
         const descParts = [];
         while (i < n && limpio[i] !== 'USD' && limpio[i] !== 'CRC' && limpio[i] !== 'EUR' && !REF_RE.test(limpio[i])) { descParts.push(limpio[i]); i++; }
         if (i >= n) break;
@@ -125,6 +143,7 @@
 
   // ── parseo del texto "una transacción por línea" (pdf.js) ──
   function parseBacFromPdfjs(texto, cfg) {
+    const periodo = extraerPeriodo(texto);
     const lines = String(texto).split('\n');
     let start = -1, end = -1;
     for (let i = 0; i < lines.length; i++) {
@@ -147,7 +166,7 @@
       const parts = l.split(/\s{2,}/);
       if (parts.length >= 5 && REF_RE.test(parts[0])) {
         const ref = parts[0];
-        const fecha = parseFecha(parts[1]) || fechaDesdeReferencia(ref);
+        const fecha = parseFecha(parts[1]) || fechaDesdeReferencia(ref, periodo);
         const moneda = parts[parts.length - 2];
         const monto = parseMonto(parts[parts.length - 1]);
         const desc = (parts[2] + ' ' + parts.slice(3, parts.length - 2).join(' ')).trim();
