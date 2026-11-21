@@ -142,18 +142,22 @@ Los aportes se guardan en la colección `ingresos`. Cada registro tiene:
 El dashboard compara, por mes y persona, el **gasto** (de `transacciones`) contra el
 **ingreso aportado** (recurrentes + esporádicos) y muestra el balance neto.
 
-## ⚠️ Nota de privacidad
+## 🔒 Seguridad y usuarios (roles)
 
-Las reglas por defecto permiten **lectura pública** de Firestore: cualquiera
-que conozca el `projectId` puede leer las transacciones. Es lo más simple
-para un dashboard sin login, pero **no es privado**.
+El proyecto incluye un módulo de seguridad con **Firebase Authentication** y dos roles:
 
-Para cerrarlo con Firebase Auth (recomendado):
+- **admin** — ve todo y puede cargar/editar datos.
+- **lector** — solo consulta (no ve la pestaña "Ingresar datos").
 
-1. En la consola de Firebase habilita **Authentication → Método de acceso → Anónimo**.
-2. Cambia la regla a `allow read: if request.auth != null;`.
-3. En `index.html` descomenta el inicio de sesión anónimo al inicio del
-   script (`firebase.auth().signInAnonymously()`).
+La seguridad real está en `firestore.rules`. El módulo está construido pero **inactivo**
+(`SEGURIDAD_ACTIVA = false` en `index.html`) hasta que se completen los pasos de
+activación (crear usuarios, perfiles en `usuarios/{uid}` y publicar las reglas).
+
+👉 Guía completa, paso a paso y rollback: **[docs/SEGURIDAD.md](docs/SEGURIDAD.md)**
+
+> Mientras esté inactivo, las reglas publicadas siguen siendo las abiertas
+> (`allow read, write: if true`), es decir: cualquiera con el `projectId` puede
+> leer y escribir. Activar el módulo es lo que cierra eso.
 
 Los datos del estado de cuenta de ejemplo quedan en `data/transacciones.json`
 para que el dashboard funcione incluso antes de configurar Firebase.

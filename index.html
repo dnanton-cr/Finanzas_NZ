@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="parser.js"></script>
 <script>
@@ -27,6 +28,25 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
 </style>
 </head>
 <body class="font-sans text-slate-200 antialiased">
+<div id="loginOverlay" class="fixed inset-0 z-[60] hidden items-center justify-center bg-[#0b1220]">
+  <div class="card p-6 w-full max-w-sm mx-4">
+    <h2 class="text-lg font-bold text-white">Finanzas NZ</h2>
+    <p class="text-xs text-slate-400 mb-4">Iniciá sesión para continuar</p>
+    <form id="loginForm" class="space-y-3">
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Correo</label>
+        <input id="loginEmail" type="email" autocomplete="username" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Contraseña</label>
+        <input id="loginPass" type="password" autocomplete="current-password" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <button type="submit" class="w-full px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm">Entrar</button>
+    </form>
+    <p id="loginMsg" class="text-xs mt-3 min-h-4"></p>
+  </div>
+</div>
+
 <div class="max-w-7xl mx-auto px-4 py-6">
 
   <!-- Encabezado -->
@@ -39,6 +59,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
       <label class="text-sm text-slate-400">Mes</label>
       <select id="mesSel" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none"></select>
       <button id="fuenteBtn" class="text-xs px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400"></button>
+      <span id="userBadge" class="hidden items-center gap-2"></span>
     </div>
   </header>
 
@@ -471,6 +492,71 @@ let ESTADOS = {};             // nombre de archivo ya subido -> {fecha, n_tx}
 let NOMBRE_ACTUAL = null;     // archivo en revisión
 let INGRESOS = [];            // aportes {_id, persona, proyecto, monto_usd, tipo, fecha?, mes?}
 let INGRESO_DESDE = null;     // 'YYYY-MM' — meses anteriores se excluyen del balance (datos migrados)
+
+// ─────────────────────── Seguridad (Firebase Auth + roles) ───────────────────────
+// Dejar SEGURIDAD_ACTIVA = false hasta crear los usuarios, los docs usuarios/{uid}
+// y publicar las reglas nuevas. Ver docs/SEGURIDAD.md.
+const SEGURIDAD_ACTIVA = false;
+let USUARIO = null;          // usuario autenticado { uid, email }
+let ROL = 'admin';           // 'admin' (edita) | 'lector' (solo consulta)
+let INICIADO = false;
+
+function puedeEditar() { return !SEGURIDAD_ACTIVA || ROL === 'admin'; }
+
+function mostrarLogin() {
+  const ov = document.getElementById('loginOverlay');
+  if (!ov) return;
+  ov.classList.remove('hidden'); ov.classList.add('flex');
+}
+
+// Lee el rol desde usuarios/{uid}. Si el doc no existe, asume 'lector'.
+async function leerRol(uid) {
+  try {
+    const d = await firebase.firestore().collection('usuarios').doc(uid).get();
+    return (d.exists && d.data().rol) ? d.data().rol : 'lector';
+  } catch (e) {
+    console.warn('No se pudo leer el rol:', e.message);
+    return 'lector';
+  }
+}
+
+function aplicarPermisos() {
+  const esAdmin = ROL === 'admin';
+  const tabIng = document.getElementById('tabIngresar');
+  if (tabIng) tabIng.classList.toggle('hidden', !esAdmin);
+  const badge = document.getElementById('userBadge');
+  if (badge) {
+    badge.classList.remove('hidden'); badge.classList.add('flex');
+    const email = (USUARIO && USUARIO.email) ? USUARIO.email : '';
+    badge.innerHTML = '<span class="text-xs text-slate-400">' + email + ' · ' + (esAdmin ? 'admin' : 'lector') + '</span>'
+      + '<button id="logoutBtn" class="text-xs px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-300">Salir</button>';
+    const b = document.getElementById('logoutBtn');
+    if (b) b.addEventListener('click', () => firebase.auth().signOut());
+  }
+  if (!esAdmin) {
+    const pIng = document.getElementById('panelIngresar');
+    if (pIng && !pIng.classList.contains('hidden')) mostrarPanel('resultados');
+  }
+  if (TX.length) renderTabla();
+}
+
+const loginForm = document.getElementById('loginForm');
+if (loginForm) loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('loginMsg');
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  msg.textContent = 'Entrando…'; msg.className = 'text-xs mt-3 min-h-4 text-slate-400';
+  try {
+    await firebase.auth().signInWithEmailAndPassword(email, pass);
+  } catch (err) {
+    const cod = err.code || '';
+    msg.textContent = (cod === 'auth/invalid-credential' || cod === 'auth/wrong-password' || cod === 'auth/user-not-found')
+      ? 'Correo o contraseña incorrectos.'
+      : ('No se pudo entrar: ' + (cod || err.message));
+    msg.className = 'text-xs mt-3 min-h-4 text-rose-400';
+  }
+});
 let PROYECTOS = [];           // lista de proyectos
 
 const money = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
@@ -513,21 +599,24 @@ function construirCatalogos() {
 
 // Corrige en Firestore los nombres de persona no canónicos (DANIEL LUIS → Daniel, etc.).
 async function corregirPersonas() {
+  if (!puedeEditar()) return;
   if (!firebase.apps.length || !CONFIG || !CONFIG.personas) return;
   const aCorregir = TX.filter(t =>
     t.persona && t._id && FinanzasParser.normalizarPersona(t.persona, CONFIG) !== t.persona);
   if (!aCorregir.length) return;
   const db = firebase.firestore();
-  let batch = db.batch(); let ops = 0;
-  for (const t of aCorregir) {
-    const correcto = FinanzasParser.normalizarPersona(t.persona, CONFIG);
-    t.persona = correcto;
-    batch.update(db.collection('transacciones').doc(t._id), { persona: correcto });
-    ops++;
-    if (ops % 450 === 0) { await batch.commit(); batch = db.batch(); }
-  }
-  if (ops % 450 !== 0) await batch.commit();
-  console.log('Corregidos ' + ops + ' nombres de persona no canónicos.');
+  try {
+    let batch = db.batch(); let ops = 0;
+    for (const t of aCorregir) {
+      const correcto = FinanzasParser.normalizarPersona(t.persona, CONFIG);
+      t.persona = correcto;
+      batch.update(db.collection('transacciones').doc(t._id), { persona: correcto });
+      ops++;
+      if (ops % 450 === 0) { await batch.commit(); batch = db.batch(); }
+    }
+    if (ops % 450 !== 0) await batch.commit();
+    if (ops) console.log('Corregidos ' + ops + ' nombres de persona no canónicos.');
+  } catch (e) { console.warn('No se pudieron corregir nombres:', e.message); }
 }
 
 // Carga el registro de estados de cuenta ya subidos (para detectar reenvíos).
@@ -614,7 +703,7 @@ function ingresoTotalMes(mes) {
 async function cargarDatos() {
   if (USAR_FIREBASE && FIREBASE_CONFIG.apiKey) {
     try {
-      firebase.initializeApp(FIREBASE_CONFIG);
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
       const db = firebase.firestore();
       const snap = await db.collection('transacciones').get();
       if (!snap.empty) {
@@ -1103,10 +1192,12 @@ function opcionesCategoria(actual) {
   return lista.map(c => `<option ${c === actual ? 'selected' : ''}>${c}</option>`).join('');
 }
 function selectCategoria(t) {
+  if (!puedeEditar()) return `<span class="text-xs text-slate-400">${t.categoria || ''}</span>`;
   const id = t._id || '';
   return `<select data-cat="${id}" onchange="cambiarCategoria('${id}', this.value)" class="bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs">${opcionesCategoria(t.categoria)}</select>`;
 }
 window.cambiarCategoria = async (id, nueva) => {
+  if (!puedeEditar()) return;
   const t = TX.find(x => x._id === id);
   if (!t) return;
   const previa = t.categoria;
@@ -1761,7 +1852,26 @@ document.getElementById('csvGuardar').addEventListener('click', async () => {
   }
 });
 
-cargarDatos();
+// ─────────────────────── Arranque (con o sin seguridad) ───────────────────────
+if (SEGURIDAD_ACTIVA && USAR_FIREBASE && FIREBASE_CONFIG.apiKey) {
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  firebase.auth().onAuthStateChanged(async (u) => {
+    USUARIO = u;
+    const ov = document.getElementById('loginOverlay');
+    if (!u) {
+      if (ov) { ov.classList.remove('hidden'); ov.classList.add('flex'); }
+      return;
+    }
+    if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
+    if (INICIADO) return;
+    INICIADO = true;
+    ROL = await leerRol(u.uid);
+    aplicarPermisos();
+    await cargarDatos();
+  });
+} else {
+  cargarDatos();
+}
 </script>
 </body>
 </html>
