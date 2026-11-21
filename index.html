@@ -19,6 +19,9 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
 <style>
   body { background: #0b1220; }
   .card { background: #111a2e; border: 1px solid #1f2a44; border-radius: 1rem; }
+  .tab-btn { padding: 0.6rem 1.2rem; border-radius: 0.75rem; border: 1px solid #1f2a44; background: #111a2e; color: #94a3b8; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all .15s; }
+  .tab-btn:hover { color: #e2e8f0; border-color: #2a3a5c; }
+  .tab-btn.tab-active { background: #0ea5e9; border-color: #0ea5e9; color: #fff; }
   ::-webkit-scrollbar { height: 8px; width: 8px; }
   ::-webkit-scrollbar-thumb { background: #2a3a5c; border-radius: 4px; }
 </style>
@@ -27,7 +30,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
 <div class="max-w-7xl mx-auto px-4 py-6">
 
   <!-- Encabezado -->
-  <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
     <div>
       <h1 class="text-2xl font-bold text-white">Finanzas NZ</h1>
       <p class="text-sm text-slate-400">Familia Nantón Zapata · gastos por persona, categoría y mes</p>
@@ -36,10 +39,15 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
       <label class="text-sm text-slate-400">Mes</label>
       <select id="mesSel" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none"></select>
       <button id="fuenteBtn" class="text-xs px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400"></button>
-      <button id="subirBtn" class="text-sm px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium">Subir estado de cuenta</button>
     </div>
   </header>
 
+  <!-- Pestañas -->
+  <div class="flex gap-2 mb-6">
+    <button id="tabResultados" onclick="mostrarPanel('resultados')" class="tab-btn tab-active">📊 Resultados</button>
+    <button id="tabIngresar" onclick="mostrarPanel('ingresar')" class="tab-btn">📥 Ingresar datos</button>
+  </div>
+<div id="panelResultados">
   <!-- KPIs -->
   <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6" id="kpis"></section>
 
@@ -50,93 +58,6 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
       <div class="h-72"><canvas id="chartIngresos"></canvas></div>
       <div id="comparacionPersonas" class="space-y-3 self-center"></div>
     </div>
-  </section>
-
-  <!-- Ingresos -->
-  <section class="card p-5 mb-6">
-    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-      <h2 class="text-sm font-semibold text-slate-300">Ingresos</h2>
-      <span class="text-xs text-slate-500">Aportes por persona y proyecto · mensuales o esporádicos</span>
-    </div>
-    <form id="ingresoForm" class="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
-      <div>
-        <label class="text-xs text-slate-400 mb-1 block">Persona</label>
-        <select id="ingPersona" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm"></select>
-      </div>
-      <div class="col-span-2">
-        <label class="text-xs text-slate-400 mb-1 block">Proyecto</label>
-        <input id="ingProyecto" list="proyectosList" placeholder="Ej. Citi CSC" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
-        <datalist id="proyectosList"></datalist>
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 mb-1 block">Monto USD</label>
-        <input id="ingMonto" type="number" min="0" step="0.01" placeholder="6000" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 mb-1 block">Tipo</label>
-        <select id="ingTipo" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
-          <option value="recurrente">Mensual</option>
-          <option value="esporadico">Esporádico</option>
-        </select>
-      </div>
-      <div id="ingFechaWrap" class="hidden">
-        <label class="text-xs text-slate-400 mb-1 block">Fecha</label>
-        <input id="ingFecha" type="date" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
-      </div>
-      <div>
-        <button type="submit" class="w-full px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm">Agregar</button>
-      </div>
-    </form>
-    <p id="ingresoMsg" class="text-xs mt-2 min-h-4"></p>
-    <div id="ingresosLista" class="mt-2 space-y-1"></div>
-  </section>
-
-  <!-- Gasto manual (sin tarjeta) -->
-  <section class="card p-5 mb-6">
-    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-      <h2 class="text-sm font-semibold text-slate-300">Gasto manual (sin tarjeta)</h2>
-      <span class="text-xs text-slate-500">CRC / USD / EUR → se convierte a USD</span>
-    </div>
-    <form id="gastoManualForm" class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
-      <div>
-        <label class="text-xs text-slate-400 mb-1 block">Persona</label>
-        <select id="gmPersona" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm"></select>
-      </div>
-      <div class="col-span-2">
-        <label class="text-xs text-slate-400 mb-1 block">Descripción</label>
-        <input id="gmDesc" placeholder="Ej. Iker mensualidad Humboldt Nov 2026" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 mb-1 block">Categoría</label>
-        <select id="gmCategoria" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm"></select>
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 mb-1 block">Monto</label>
-        <input id="gmMonto" type="number" min="0" step="0.01" placeholder="530425" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 mb-1 block">Moneda</label>
-        <select id="gmMoneda" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
-          <option value="CRC">CRC</option>
-          <option value="USD" selected>USD</option>
-          <option value="EUR">EUR</option>
-        </select>
-      </div>
-      <div id="gmTasaWrap" class="hidden">
-        <label class="text-xs text-slate-400 mb-1 block">Tipo de cambio</label>
-        <input id="gmTasa" type="number" min="0" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 mb-1 block">Fecha</label>
-        <input id="gmFecha" type="date" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
-      </div>
-      <div class="md:col-span-4 flex items-center gap-3">
-        <button type="submit" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm">Agregar gasto</button>
-        <span id="gmPreview" class="text-sm text-emerald-400"></span>
-      </div>
-    </form>
-    <p id="gmMsg" class="text-xs mt-2 min-h-4"></p>
-    <div id="gmLista" class="mt-2 space-y-1"></div>
   </section>
 
   <!-- Gráficos -->
@@ -236,6 +157,149 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
     </div>
   </section>
 
+</div>
+
+<div id="panelIngresar" class="hidden">
+  <!-- Subir estado de cuenta -->
+  <section class="card p-5 mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <h2 class="text-sm font-semibold text-slate-300">Estados de cuenta</h2>
+      <span class="text-xs text-slate-500">PDF BAC Credomatic · se procesa en tu navegador</span>
+    </div>
+    <button id="subirBtn" class="px-5 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm">📄 Subir estado de cuenta (PDF)</button>
+  </section>
+  <!-- Subida masiva (CSV) -->
+  <section class="card p-5 mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <h2 class="text-sm font-semibold text-slate-300">Subida masiva (CSV)</h2>
+      <span class="text-xs text-slate-500">Carga muchos gastos o ingresos de una vez</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 mb-3">
+      <button id="csvGastosBtn" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium">📥 Subir gastos (CSV)</button>
+      <button id="csvIngresosBtn" class="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium">📥 Subir ingresos (CSV)</button>
+      <input type="file" id="csvFile" accept=".csv,text/csv" class="hidden">
+    </div>
+    <div class="text-xs text-slate-500 leading-relaxed">
+      <b>Gastos</b> → <code>fecha,persona,descripcion,categoria,moneda,monto</code> ·
+      <b>Ingresos</b> → <code>persona,proyecto,monto,moneda,tipo,fecha</code><br>
+      Primera fila = encabezados · <code>moneda</code> = CRC/USD/EUR (USD por defecto) · <code>fecha</code> = AAAA-MM-DD · <code>monto</code> sin separador de miles (ej. 530425) · <code>tipo</code> = mensual o esporadico (esporadico requiere fecha) ·
+      <span class="text-sky-400 cursor-pointer hover:underline" onclick="descargarPlantilla('gastos')">plantilla gastos</span> ·
+      <span class="text-violet-400 cursor-pointer hover:underline" onclick="descargarPlantilla('ingresos')">plantilla ingresos</span>
+    </div>
+    <div id="csvStatus" class="text-sm text-slate-300 mt-2"></div>
+    <div id="csvPreview" class="hidden mt-3">
+      <div class="overflow-x-auto max-h-80 overflow-y-auto border border-slate-800 rounded-lg">
+        <table class="w-full text-xs">
+          <thead id="csvHead" class="sticky top-0 bg-[#111a2e]"></thead>
+          <tbody id="csvBody" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+      <div class="flex items-center gap-3 mt-3">
+        <button id="csvGuardar" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm">Guardar</button>
+        <span id="csvResultado" class="text-sm"></span>
+      </div>
+    </div>
+  </section>
+  <!-- Ingresos -->
+  <section class="card p-5 mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <h2 class="text-sm font-semibold text-slate-300">Ingresos</h2>
+      <span class="text-xs text-slate-500">Aportes por persona y proyecto · mensuales o esporádicos</span>
+    </div>
+    <form id="ingresoForm" class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Persona</label>
+        <select id="ingPersona" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm"></select>
+      </div>
+      <div class="col-span-2">
+        <label class="text-xs text-slate-400 mb-1 block">Proyecto</label>
+        <input id="ingProyecto" list="proyectosList" placeholder="Ej. Citi CSC" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+        <datalist id="proyectosList"></datalist>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Monto</label>
+        <input id="ingMonto" type="number" min="0" step="0.01" placeholder="6000" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Moneda</label>
+        <select id="ingMoneda" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+          <option value="USD" selected>USD</option>
+          <option value="CRC">CRC</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </div>
+      <div id="ingTasaWrap" class="hidden">
+        <label class="text-xs text-slate-400 mb-1 block">Tipo de cambio</label>
+        <input id="ingTasa" type="number" min="0" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Tipo</label>
+        <select id="ingTipo" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+          <option value="recurrente">Mensual</option>
+          <option value="esporadico">Esporádico</option>
+        </select>
+      </div>
+      <div id="ingFechaWrap" class="hidden">
+        <label class="text-xs text-slate-400 mb-1 block">Fecha</label>
+        <input id="ingFecha" type="date" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div class="md:col-span-4 flex items-center gap-3">
+        <button type="submit" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm">Agregar</button>
+        <span id="ingPreview" class="text-sm text-emerald-400"></span>
+      </div>
+    </form>
+    <p id="ingresoMsg" class="text-xs mt-2 min-h-4"></p>
+    <div id="ingresosLista" class="mt-2 space-y-1"></div>
+  </section>
+  <!-- Gasto manual (sin tarjeta) -->
+  <section class="card p-5 mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <h2 class="text-sm font-semibold text-slate-300">Gasto manual (sin tarjeta)</h2>
+      <span class="text-xs text-slate-500">CRC / USD / EUR → se convierte a USD</span>
+    </div>
+    <form id="gastoManualForm" class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Persona</label>
+        <select id="gmPersona" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm"></select>
+      </div>
+      <div class="col-span-2">
+        <label class="text-xs text-slate-400 mb-1 block">Descripción</label>
+        <input id="gmDesc" placeholder="Ej. Iker mensualidad Humboldt Nov 2026" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Categoría</label>
+        <select id="gmCategoria" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm"></select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Monto</label>
+        <input id="gmMonto" type="number" min="0" step="0.01" placeholder="530425" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Moneda</label>
+        <select id="gmMoneda" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+          <option value="CRC">CRC</option>
+          <option value="USD" selected>USD</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </div>
+      <div id="gmTasaWrap" class="hidden">
+        <label class="text-xs text-slate-400 mb-1 block">Tipo de cambio</label>
+        <input id="gmTasa" type="number" min="0" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Fecha</label>
+        <input id="gmFecha" type="date" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div class="md:col-span-4 flex items-center gap-3">
+        <button type="submit" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm">Agregar gasto</button>
+        <span id="gmPreview" class="text-sm text-emerald-400"></span>
+      </div>
+    </form>
+    <p id="gmMsg" class="text-xs mt-2 min-h-4"></p>
+    <div id="gmLista" class="mt-2 space-y-1"></div>
+  </section>
+
+</div>
   <footer class="text-center text-xs text-slate-600 mt-8 pb-4">
     Finanzas_NZ · datos desde Firebase Firestore (proyecto <span id="projId"></span>) · montos en USD · CRC→USD ¢<span id="tasaLabel"></span> · EUR→USD $<span id="tasaEurLabel"></span>
   </footer>
@@ -750,6 +814,27 @@ function preverGasto() {
   el.textContent = '= ' + money2(convertirAUsd(monto, moneda, tasa)) + ' USD';
 }
 
+function actualizarTasaIngreso() {
+  const moneda = document.getElementById('ingMoneda').value;
+  const wrap = document.getElementById('ingTasaWrap');
+  const tasa = document.getElementById('ingTasa');
+  if (moneda === 'USD') { wrap.classList.add('hidden'); tasa.value = ''; }
+  else {
+    wrap.classList.remove('hidden');
+    if (!tasa.value) tasa.value = moneda === 'CRC' ? USD_CRC : EUR_USD;
+  }
+  preverIngreso();
+}
+function preverIngreso() {
+  const el = document.getElementById('ingPreview');
+  if (!el) return;
+  const monto = parseFloat(document.getElementById('ingMonto').value);
+  const moneda = document.getElementById('ingMoneda').value;
+  const tasa = parseFloat(document.getElementById('ingTasa').value);
+  if (!(monto > 0)) { el.textContent = ''; return; }
+  el.textContent = '= ' + money2(convertirAUsd(monto, moneda, tasa)) + ' USD';
+}
+
 function renderGastoManual() {
   const selP = document.getElementById('gmPersona');
   if (selP) selP.innerHTML = listaPersonas().map(p => `<option>${p}</option>`).join('');
@@ -794,7 +879,7 @@ function renderIngresos() {
       + '<span class="text-slate-200 font-medium w-20 shrink-0">' + i.persona + '</span>'
       + '<span class="text-slate-300 flex-1 truncate">' + (i.proyecto || '—') + '</span>'
       + '<span class="text-xs shrink-0 ' + (rec ? 'text-sky-400' : 'text-amber-400') + '">' + (rec ? 'Mensual' : (i.fecha || 'Esporádico')) + '</span>'
-      + '<span class="text-slate-200 font-medium shrink-0">' + money(i.monto_usd) + '</span>'
+      + '<span class="text-slate-200 font-medium shrink-0">' + money(i.monto_usd) + (i.moneda && i.moneda !== 'USD' && i.monto != null ? '<span class="text-xs text-slate-500"> (' + (i.moneda === 'CRC' ? '¢' : '€') + Number(i.monto).toLocaleString('es-CR') + ')</span>' : '') + '</span>'
       + '<button onclick="borrarIngreso(\'' + i._id + '\')" class="text-xs text-rose-400 hover:text-rose-300 shrink-0" title="Borrar">✕</button>'
       + '</div>';
   }).join('');
@@ -1006,6 +1091,17 @@ function poblarSelectores() {
   document.getElementById('filtroCategoria').innerHTML = '<option value="">Todas las categorías</option>' + cats.map(c => `<option>${c}</option>`).join('');
 }
 
+// Cambia entre la pestaña de resultados y la de ingreso de datos.
+function mostrarPanel(panel) {
+  const activoIngresar = panel === 'ingresar';
+  document.getElementById('panelResultados').classList.toggle('hidden', activoIngresar);
+  document.getElementById('panelIngresar').classList.toggle('hidden', !activoIngresar);
+  document.getElementById('tabResultados').classList.toggle('tab-active', !activoIngresar);
+  document.getElementById('tabIngresar').classList.toggle('tab-active', activoIngresar);
+  if (!activoIngresar) render(); // recrear gráficos ya con el panel visible (evita charts en 0x0)
+}
+window.mostrarPanel = mostrarPanel;
+
 function render() {
   poblarSelectores();
   renderKpis();
@@ -1213,6 +1309,9 @@ async function recargarTx() {
 document.getElementById('ingTipo').addEventListener('change', e => {
   document.getElementById('ingFechaWrap').classList.toggle('hidden', e.target.value !== 'esporadico');
 });
+document.getElementById('ingMoneda').addEventListener('change', actualizarTasaIngreso);
+document.getElementById('ingMonto').addEventListener('input', preverIngreso);
+document.getElementById('ingTasa').addEventListener('input', preverIngreso);
 document.getElementById('ingresoForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msg = document.getElementById('ingresoMsg');
@@ -1221,6 +1320,8 @@ document.getElementById('ingresoForm').addEventListener('submit', async (e) => {
   const persona = document.getElementById('ingPersona').value;
   const proyecto = document.getElementById('ingProyecto').value.trim();
   const monto = parseFloat(document.getElementById('ingMonto').value);
+  const moneda = document.getElementById('ingMoneda').value;
+  const tasa = parseFloat(document.getElementById('ingTasa').value);
   const tipo = document.getElementById('ingTipo').value;
   const fecha = document.getElementById('ingFecha').value;
   if (!persona) { msg.textContent = 'Elegí la persona.'; return; }
@@ -1228,7 +1329,8 @@ document.getElementById('ingresoForm').addEventListener('submit', async (e) => {
   if (!(monto > 0)) { msg.textContent = 'Escribí un monto mayor a 0.'; return; }
   if (tipo === 'esporadico' && !fecha) { msg.textContent = 'Para un aporte esporádico elegí la fecha.'; return; }
   if (!firebase.apps.length) { msg.textContent = 'Firebase no disponible.'; return; }
-  const doc = { persona, proyecto, monto_usd: monto, tipo };
+  const monto_usd = convertirAUsd(monto, moneda, tasa);
+  const doc = { persona, proyecto, moneda, monto, monto_usd, tipo };
   if (tipo === 'esporadico') { doc.fecha = fecha; doc.mes = fecha.slice(0, 7); }
   try {
     await firebase.firestore().collection('ingresos').add(doc);
@@ -1295,6 +1397,186 @@ window.borrarGastoManual = async (id) => {
     await recargarTx();
   } catch (e) { console.warn('No se pudo borrar el gasto:', e.message); }
 };
+
+
+// ── Subida masiva (CSV) ──
+let CSV_TIPO = null;       // 'gastos' | 'ingresos'
+let CSV_FILAS = [];        // [{ datos, errores }]
+
+function normalizarCabecera(hh) {
+  const m = String(hh).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const mapa = { 'fecha': 'fecha', 'persona': 'persona', 'descripcion': 'descripcion', 'concepto': 'descripcion',
+    'categoria': 'categoria', 'moneda': 'moneda', 'monto': 'monto', 'importe': 'monto', 'amount': 'monto',
+    'proyecto': 'proyecto', 'tipo': 'tipo', 'tasa': 'tasa' };
+  return mapa[m] || m;
+}
+function normalizarPersonaCsv(p) {
+  const s = String(p || '').trim();
+  const match = listaPersonas().find(x => x.toLowerCase() === s.toLowerCase());
+  return match || s;
+}
+function parsearCsv(texto) {
+  const comas = (texto.match(/,/g) || []).length;
+  const ptos = (texto.match(/;/g) || []).length;
+  const delim = ptos > comas ? ';' : ',';
+  const filas = [];
+  let fila = [], campo = '', entreComillas = false;
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i];
+    if (entreComillas) {
+      if (c === '"') { if (texto[i + 1] === '"') { campo += '"'; i++; } else entreComillas = false; }
+      else campo += c;
+    } else {
+      if (c === '"') entreComillas = true;
+      else if (c === delim) { fila.push(campo.trim()); campo = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && texto[i + 1] === '\n') i++;
+        fila.push(campo.trim());
+        if (fila.some(x => x !== '')) filas.push(fila);
+        fila = []; campo = '';
+      }
+      else campo += c;
+    }
+  }
+  fila.push(campo.trim());
+  if (fila.some(x => x !== '')) filas.push(fila);
+  return filas;
+}
+function mapearCsv(filas) {
+  if (!filas.length) return { columnas: [], filas: [] };
+  return { columnas: filas[0].map(normalizarCabecera), filas: filas.slice(1) };
+}
+function filaAGasto(cols, fila) {
+  const rec = {};
+  fila.forEach((v, i) => { if (cols[i]) rec[cols[i]] = v; });
+  const errores = [];
+  const sobrantes = fila.slice(cols.length).filter(x => String(x).trim() !== '');
+  if (sobrantes.length) errores.push('columnas de más (¿coma o separador en el monto?)');
+  const persona = normalizarPersonaCsv(rec.persona);
+  const descripcion = (rec.descripcion || '').trim();
+  const categoria = (rec.categoria || '').trim() || 'Otros';
+  const monto = parseFloat(String(rec.monto || '').replace(/[^0-9.\-]/g, ''));
+  const moneda = (rec.moneda || 'USD').toUpperCase();
+  const tasa = parseFloat(rec.tasa) || 0;
+  const fecha = (rec.fecha || '').trim();
+  if (!persona) errores.push('sin persona');
+  if (!descripcion) errores.push('sin descripción');
+  if (!(monto > 0)) errores.push('monto inválido');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) errores.push('fecha inválida (AAAA-MM-DD)');
+  if (!['CRC', 'USD', 'EUR'].includes(moneda)) errores.push('moneda inválida');
+  const monto_usd = monto > 0 ? convertirAUsd(monto, moneda, tasa) : 0;
+  return { errores, datos: { fecha, mes: /^\d{4}-\d{2}/.test(fecha) ? fecha.slice(0, 7) : null, persona, descripcion, categoria, moneda, monto, monto_usd, manual: true, lugar: null, tarjeta: null, referencia: null } };
+}
+function filaAIngreso(cols, fila) {
+  const rec = {};
+  fila.forEach((v, i) => { if (cols[i]) rec[cols[i]] = v; });
+  const errores = [];
+  const sobrantes = fila.slice(cols.length).filter(x => String(x).trim() !== '');
+  if (sobrantes.length) errores.push('columnas de más (¿coma o separador en el monto?)');
+  const persona = normalizarPersonaCsv(rec.persona);
+  const proyecto = (rec.proyecto || '').trim();
+  const monto = parseFloat(String(rec.monto || '').replace(/[^0-9.\-]/g, ''));
+  const moneda = (rec.moneda || 'USD').toUpperCase();
+  const tasa = parseFloat(rec.tasa) || 0;
+  let tipo = String(rec.tipo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  tipo = (tipo === 'recurrente' || tipo === 'mensual') ? 'recurrente' : 'esporadico';
+  const fecha = (rec.fecha || '').trim();
+  if (!persona) errores.push('sin persona');
+  if (!proyecto) errores.push('sin proyecto');
+  if (!(monto > 0)) errores.push('monto inválido');
+  if (!['CRC', 'USD', 'EUR'].includes(moneda)) errores.push('moneda inválida');
+  const datos = { persona, proyecto, moneda, monto, monto_usd: monto > 0 ? convertirAUsd(monto, moneda, tasa) : 0, tipo };
+  if (tipo === 'esporadico') {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) errores.push('esporádico requiere fecha AAAA-MM-DD');
+    else { datos.fecha = fecha; datos.mes = fecha.slice(0, 7); }
+  }
+  return { errores, datos };
+}
+function mostrarCsvPreview() {
+  const cont = document.getElementById('csvPreview');
+  const head = document.getElementById('csvHead');
+  const body = document.getElementById('csvBody');
+  const guardar = document.getElementById('csvGuardar');
+  const ok = CSV_FILAS.filter(f => !f.errores.length).length;
+  const mal = CSV_FILAS.length - ok;
+  const cols = CSV_TIPO === 'gastos'
+    ? ['Fecha', 'Persona', 'Descripción', 'Categoría', 'Moneda', 'USD']
+    : ['Persona', 'Proyecto', 'USD', 'Moneda', 'Tipo', 'Fecha'];
+  head.innerHTML = '<tr class="text-left text-slate-500 uppercase border-b border-slate-700">'
+    + cols.map(c => '<th class="py-2 pr-2">' + c + '</th>').join('')
+    + '<th class="py-2">Estado</th></tr>';
+  body.innerHTML = CSV_FILAS.map((f) => {
+    const d = f.datos;
+    const celdas = CSV_TIPO === 'gastos'
+      ? [d.fecha, d.persona, d.descripcion, d.categoria, d.moneda, money2(d.monto_usd)]
+      : [d.persona, d.proyecto, money2(d.monto_usd), d.moneda, d.tipo, d.fecha || '—'];
+    const estado = f.errores.length
+      ? '<span class="text-rose-400">' + f.errores.join('; ') + '</span>'
+      : '<span class="text-emerald-400">ok</span>';
+    return '<tr class="' + (f.errores.length ? 'opacity-60' : '') + '">'
+      + celdas.map(c => '<td class="py-1 pr-2 text-slate-300">' + c + '</td>').join('')
+      + '<td class="py-1 text-xs">' + estado + '</td></tr>';
+  }).join('');
+  cont.classList.remove('hidden');
+  guardar.disabled = ok === 0;
+  guardar.textContent = 'Guardar ' + ok + ' filas';
+  document.getElementById('csvStatus').innerHTML = '<b>' + ok + '</b> filas válidas · <b class="text-rose-400">' + mal + '</b> con errores' + (mal ? ' (las filas con error no se guardarán)' : '');
+}
+window.descargarPlantilla = (tipo) => {
+  const contenido = tipo === 'gastos'
+    ? 'fecha,persona,descripcion,categoria,moneda,monto\n2026-11-01,Daniel,Mantenimiento casa,Otros,USD,300\n2026-11-02,Iker,Colegio Humboldt,Educacion,CRC,530425'
+    : 'persona,proyecto,monto,moneda,tipo,fecha\nDaniel,Citi CSC,5000,USD,mensual,\nKarin,Administracion propiedades Trigal,2000,USD,esporadico,2026-10-30';
+  const blob = new Blob(['\uFEFF' + contenido], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'plantilla_' + tipo + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+document.getElementById('csvGastosBtn').addEventListener('click', () => { CSV_TIPO = 'gastos'; document.getElementById('csvFile').click(); });
+document.getElementById('csvIngresosBtn').addEventListener('click', () => { CSV_TIPO = 'ingresos'; document.getElementById('csvFile').click(); });
+document.getElementById('csvFile').addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  document.getElementById('csvStatus').textContent = 'Procesando ' + f.name + '…';
+  try {
+    const texto = (await f.text()).replace(/^\uFEFF/, '');
+    const filas = parsearCsv(texto);
+    const parsed = mapearCsv(filas);
+    if (!parsed.columnas.length || !parsed.filas.length) { document.getElementById('csvStatus').textContent = 'CSV vacío o sin filas de datos.'; return; }
+    CSV_FILAS = parsed.filas.map(fila => CSV_TIPO === 'gastos' ? filaAGasto(parsed.columnas, fila) : filaAIngreso(parsed.columnas, fila));
+    mostrarCsvPreview();
+  } catch (err) {
+    document.getElementById('csvStatus').textContent = 'Error al leer el CSV: ' + err.message;
+  }
+  e.target.value = '';
+});
+document.getElementById('csvGuardar').addEventListener('click', async () => {
+  const res = document.getElementById('csvResultado');
+  const buenas = CSV_FILAS.filter(f => !f.errores.length);
+  if (!buenas.length) { res.textContent = 'Nada para guardar.'; return; }
+  if (!firebase.apps.length) { res.textContent = 'Firebase no disponible.'; return; }
+  res.textContent = 'Guardando…';
+  try {
+    const db = firebase.firestore();
+    const coleccion = CSV_TIPO === 'gastos' ? 'transacciones' : 'ingresos';
+    let batch = db.batch(); let ops = 0;
+    for (const f of buenas) {
+      batch.set(db.collection(coleccion).doc(), f.datos);
+      ops++;
+      if (ops % 450 === 0) { await batch.commit(); batch = db.batch(); }
+    }
+    if (ops % 450 !== 0) await batch.commit();
+    res.textContent = '✔ ' + ops + ' filas guardadas en ' + coleccion + '.';
+    res.className = 'text-sm text-emerald-400';
+    CSV_FILAS = [];
+    document.getElementById('csvPreview').classList.add('hidden');
+    await recargarTx();
+  } catch (err) {
+    res.textContent = 'Error al guardar: ' + err.message;
+    res.className = 'text-sm text-rose-400';
+  }
+});
 
 cargarDatos();
 </script>
