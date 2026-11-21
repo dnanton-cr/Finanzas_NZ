@@ -114,6 +114,26 @@ def categorizar(desc: str, config: dict):
     return config.get("otros_nombre", "Otros")
 
 
+def sin_acentos(s: str) -> str:
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFD", s.lower()) if unicodedata.category(c) != "Mn")
+
+
+def normalizar_persona(nombre_crudo: str, config: dict):
+    """Normaliza el nombre crudo del PDF a un nombre canónico (primer token sin acentos).
+    Ej.: "DANIEL LUIS/N" → "Daniel", "KARIN CECILIA/N" → "Karin"."""
+    canon = [str(v) for v in config.get("personas", {}).values()]
+    tokens = re.split(r"[\s/]+", (nombre_crudo or "").strip())
+    primer = tokens[0] if tokens else ""
+    if primer:
+        p = sin_acentos(primer)
+        for c in canon:
+            if sin_acentos(c.split()[0]) == p:
+                return c
+        return primer[0].upper() + primer[1:].lower()
+    return (nombre_crudo or "").strip() or None
+
+
 def a_usd(moneda: str, monto: float, config: dict):
     """Normaliza el monto a dólares: CRC→USD, USD se mantiene, EUR→USD."""
     if moneda == "CRC":
@@ -166,8 +186,7 @@ def parsear(texto: str, config: dict):
     def nombre_persona(card: str, nombre_crudo: str):
         if card in personas:
             return personas[card]
-        # fallback: primer token del nombre
-        return nombre_crudo.split("/")[0].strip().title() if nombre_crudo else card
+        return normalizar_persona(nombre_crudo, config) or card
 
     transacciones = []
     for idx, (card, nombre_crudo, nombre_idx) in enumerate(segmentos):

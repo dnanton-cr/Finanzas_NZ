@@ -73,6 +73,23 @@
     return cfg.otros_nombre || 'Otros';
   }
 
+  function sinAcentos(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+
+  // Normaliza el nombre crudo del PDF a uno de los nombres canónicos,
+  // comparando el primer token sin acentos ("DANIEL LUIS/N" → "Daniel").
+  function normalizarPersona(raw, cfg) {
+    const canon = Object.values((cfg && cfg.personas) || {}).map(String);
+    const primer = String(raw || '').trim().split(/[\s/]+/)[0] || '';
+    if (primer) {
+      const p = sinAcentos(primer);
+      for (const c of canon) {
+        if (sinAcentos(c.trim().split(/\s+/)[0]) === p) return c;
+      }
+      return primer.charAt(0).toUpperCase() + primer.slice(1).toLowerCase();
+    }
+    return String(raw || '').trim() || null;
+  }
+
   function aUsd(moneda, monto, cfg) {
     if (moneda === 'CRC') return Math.round(monto / (cfg.tasa_usd_crc || 445) * 100) / 100;
     if (moneda === 'EUR') return Math.round(monto * (cfg.tasa_eur_usd || 1.08) * 100) / 100;
@@ -111,7 +128,7 @@
     }
 
     const personas = cfg.personas || {};
-    const nombrePersona = (card, crudo) => personas[card] || (crudo ? crudo.split('/')[0].trim() : card);
+    const nombrePersona = (card, crudo) => personas[card] || normalizarPersona(crudo, cfg) || card;
 
     const tx = [];
     for (let idx = 0; idx < segmentos.length; idx++) {
@@ -160,7 +177,7 @@
       const l = lines[i].trim();
       if (!l) continue;
       const cm = /^\*{6,}(\d{4})\s+(.+)$/.exec(l);
-      if (cm) { card = cm[1]; persona = personas[card] || cm[2].split('/')[0].trim(); continue; }
+      if (cm) { card = cm[1]; persona = personas[card] || normalizarPersona(cm[2], cfg); continue; }
       if (/^(B\) Detalle|N\. Referencia|Fecha de pago|Concepto\/Descripción|Movimientos|TARJETA DE CREDITO|Página|colones|dólares)/.test(l)) continue;
 
       const parts = l.split(/\s{2,}/);
