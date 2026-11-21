@@ -190,6 +190,8 @@ let mesActual = null;
 let fuente = 'local';
 let APRENDIDAS = new Map();   // descripcion normalizada -> categoria (aprendida de meses previos)
 let CATEGORIAS = [];          // lista completa de categorias (config + datos)
+let ESTADOS = {};             // nombre de archivo ya subido -> {fecha, n_tx}
+let NOMBRE_ACTUAL = null;     // archivo en revisión
 
 const money = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
 const money2 = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -221,6 +223,19 @@ function construirCatalogos() {
   construirAprendidas();
 }
 
+// Carga el registro de estados de cuenta ya subidos (para detectar reenvíos).
+async function cargarEstados() {
+  ESTADOS = {};
+  if (!firebase.apps.length) return;
+  try {
+    const snap = await firebase.firestore().collection('estados').get();
+    snap.docs.forEach(d => {
+      const x = d.data();
+      if (x && x.nombre) ESTADOS[x.nombre] = x;
+    });
+  } catch (e) { console.warn('No se pudo leer el registro de estados subidos:', e.message); }
+}
+
 // ─────────────────────────── Carga de datos ───────────────────────────
 async function cargarDatos() {
   if (USAR_FIREBASE && FIREBASE_CONFIG.apiKey) {
@@ -245,6 +260,7 @@ async function cargarDatos() {
   if (meses.length) mesActual = meses[0];
   await cargarConfig();
   construirCatalogos();
+  await cargarEstados();
   await cargarPresupuesto();
   render();
 }
@@ -657,6 +673,7 @@ async function extraerTextoPdf(buf) {
 async function procesarArchivo(file) {
   const status = document.getElementById('subirStatus');
   const cfg = await cargarConfig();
+  NOMBRE_ACTUAL = file.name;
   status.textContent = 'Procesando ' + file.name + '…';
   document.getElementById('subirReview').classList.add('hidden');
   try {
@@ -692,7 +709,11 @@ function mostrarReview() {
   const personas = {};
   for (const t of REVIEW) personas[t.persona] = (personas[t.persona] || 0) + 1;
 
-  resumen.innerHTML =
+  const yaSubido = NOMBRE_ACTUAL && ESTADOS[NOMBRE_ACTUAL];
+  const aviso = yaSubido
+    ? '<div class="mb-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">⚠️ Este archivo ya fue subido' + (yaSubido.fecha ? ' el ' + yaSubido.fecha : '') + '. Al guardar se actualizan las transacciones existentes (no se duplican).</div>'
+    : '';
+  resumen.innerHTML = aviso +
     '<b>' + REVIEW.length + '</b> transacciones detectadas' +
     (PARSED && PARSED.noReconocidas ? ' · <span class="text-amber-400">' + PARSED.noReconocidas + ' líneas no reconocidas</span>' : '') +
     ' · CRC nativo ¢' + crc.toLocaleString('es-CR') +
@@ -753,6 +774,17 @@ document.getElementById('subirGuardar').addEventListener('click', async () => {
     if (ops % 450 !== 0) await batch.commit();
     resEl.textContent = '✔ ' + ops + ' transacciones guardadas.';
     resEl.className = 'text-sm text-emerald-400';
+    if (NOMBRE_ACTUAL) {
+      try {
+        const regId = await sha256hex(NOMBRE_ACTUAL);
+        const hoy = new Date().toISOString().slice(0, 10);
+        await db.collection('estados').doc(regId).set({
+          nombre: NOMBRE_ACTUAL, fecha: hoy, n_tx: ops,
+          meses: [...new Set(incluidas.map(t => t.mes).filter(Boolean))]
+        });
+        ESTADOS[NOMBRE_ACTUAL] = { fecha: hoy, n_tx: ops };
+      } catch (e) { console.warn('No se pudo registrar el archivo:', e.message); }
+    }
     await recargarTx();
   } catch (e) {
     resEl.textContent = 'Error al guardar: ' + e.message;
