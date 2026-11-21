@@ -91,6 +91,54 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
     <div id="ingresosLista" class="mt-2 space-y-1"></div>
   </section>
 
+  <!-- Gasto manual (sin tarjeta) -->
+  <section class="card p-5 mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <h2 class="text-sm font-semibold text-slate-300">Gasto manual (sin tarjeta)</h2>
+      <span class="text-xs text-slate-500">CRC / USD / EUR → se convierte a USD</span>
+    </div>
+    <form id="gastoManualForm" class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Persona</label>
+        <select id="gmPersona" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm"></select>
+      </div>
+      <div class="col-span-2">
+        <label class="text-xs text-slate-400 mb-1 block">Descripción</label>
+        <input id="gmDesc" placeholder="Ej. Iker mensualidad Humboldt Nov 2026" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Categoría</label>
+        <select id="gmCategoria" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm"></select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Monto</label>
+        <input id="gmMonto" type="number" min="0" step="0.01" placeholder="530425" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Moneda</label>
+        <select id="gmMoneda" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+          <option value="CRC">CRC</option>
+          <option value="USD" selected>USD</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </div>
+      <div id="gmTasaWrap" class="hidden">
+        <label class="text-xs text-slate-400 mb-1 block">Tipo de cambio</label>
+        <input id="gmTasa" type="number" min="0" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Fecha</label>
+        <input id="gmFecha" type="date" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div class="md:col-span-4 flex items-center gap-3">
+        <button type="submit" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm">Agregar gasto</button>
+        <span id="gmPreview" class="text-sm text-emerald-400"></span>
+      </div>
+    </form>
+    <p id="gmMsg" class="text-xs mt-2 min-h-4"></p>
+    <div id="gmLista" class="mt-2 space-y-1"></div>
+  </section>
+
   <!-- Gráficos -->
   <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
     <div class="card p-5 lg:col-span-2">
@@ -631,6 +679,61 @@ function renderAltas() {
   }).join('');
 }
 
+function convertirAUsd(monto, moneda, tasa) {
+  if (moneda === 'CRC') return monto / (tasa || USD_CRC);
+  if (moneda === 'EUR') return monto * (tasa || EUR_USD);
+  return monto;
+}
+
+function actualizarTasaGasto() {
+  const moneda = document.getElementById('gmMoneda').value;
+  const wrap = document.getElementById('gmTasaWrap');
+  const tasa = document.getElementById('gmTasa');
+  if (moneda === 'USD') { wrap.classList.add('hidden'); tasa.value = ''; }
+  else {
+    wrap.classList.remove('hidden');
+    if (!tasa.value) tasa.value = moneda === 'CRC' ? USD_CRC : EUR_USD;
+  }
+  preverGasto();
+}
+
+function preverGasto() {
+  const el = document.getElementById('gmPreview');
+  if (!el) return;
+  const monto = parseFloat(document.getElementById('gmMonto').value);
+  const moneda = document.getElementById('gmMoneda').value;
+  const tasa = parseFloat(document.getElementById('gmTasa').value);
+  if (!(monto > 0)) { el.textContent = ''; return; }
+  el.textContent = '= ' + money2(convertirAUsd(monto, moneda, tasa)) + ' USD';
+}
+
+function renderGastoManual() {
+  const selP = document.getElementById('gmPersona');
+  if (selP) selP.innerHTML = listaPersonas().map(p => `<option>${p}</option>`).join('');
+  const selC = document.getElementById('gmCategoria');
+  if (selC) {
+    const defCat = CATEGORIAS.includes('Otros') ? 'Otros' : (CATEGORIAS[0] || '');
+    selC.innerHTML = CATEGORIAS.map(c => `<option ${c === defCat ? 'selected' : ''}>${c}</option>`).join('');
+  }
+  const cont = document.getElementById('gmLista');
+  if (!cont) return;
+  const manuales = TX.filter(t => t.manual === true)
+    .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')).slice(0, 20);
+  if (!manuales.length) {
+    cont.innerHTML = '<p class="text-sm text-slate-500">Sin gastos manuales. Agregá el primero arriba.</p>';
+    return;
+  }
+  cont.innerHTML = manuales.map(t =>
+    '<div class="flex items-center justify-between gap-3 text-sm py-1.5 border-b border-slate-800/50">'
+    + '<span class="text-slate-400 text-xs shrink-0">' + (t.fecha || '') + '</span>'
+    + '<span class="text-slate-200 font-medium w-20 shrink-0">' + t.persona + '</span>'
+    + '<span class="text-slate-300 flex-1 truncate">' + (t.descripcion || '').replace(/_/g, ' ') + '</span>'
+    + '<span class="text-xs text-slate-500 shrink-0">' + t.categoria + '</span>'
+    + '<span class="text-slate-200 font-medium shrink-0">' + money2(t.monto_usd) + '</span>'
+    + '<button onclick="borrarGastoManual(\'' + t._id + '\')" class="text-xs text-rose-400 hover:text-rose-300 shrink-0" title="Borrar">✕</button>'
+    + '</div>').join('');
+}
+
 function renderIngresos() {
   const sel = document.getElementById('ingPersona');
   if (sel) sel.innerHTML = listaPersonas().map(p => `<option>${p}</option>`).join('');
@@ -864,6 +967,7 @@ function render() {
   poblarSelectores();
   renderKpis();
   renderIngresos();
+  renderGastoManual();
   renderComparacion();
   renderCharts();
   renderPersonasMes();
@@ -1101,6 +1205,51 @@ window.borrarIngreso = async (id) => {
     await cargarIngresos();
     render();
   } catch (e) { console.warn('No se pudo borrar el ingreso:', e.message); }
+};
+
+// ── Gasto manual: acciones ──
+document.getElementById('gmFecha').value = new Date().toISOString().slice(0, 10);
+document.getElementById('gmMoneda').addEventListener('change', actualizarTasaGasto);
+document.getElementById('gmMonto').addEventListener('input', preverGasto);
+document.getElementById('gmTasa').addEventListener('input', preverGasto);
+document.getElementById('gastoManualForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('gmMsg');
+  const base = 'text-xs mt-2 min-h-4';
+  msg.textContent = ''; msg.className = base;
+  const persona = document.getElementById('gmPersona').value;
+  const descripcion = document.getElementById('gmDesc').value.trim();
+  const categoria = document.getElementById('gmCategoria').value;
+  const monto = parseFloat(document.getElementById('gmMonto').value);
+  const moneda = document.getElementById('gmMoneda').value;
+  const tasa = parseFloat(document.getElementById('gmTasa').value);
+  const fecha = document.getElementById('gmFecha').value;
+  if (!persona) { msg.textContent = 'Elegí la persona.'; return; }
+  if (!descripcion) { msg.textContent = 'Escribí una descripción.'; return; }
+  if (!(monto > 0)) { msg.textContent = 'Escribí un monto mayor a 0.'; return; }
+  if (!fecha) { msg.textContent = 'Elegí la fecha.'; return; }
+  if (!firebase.apps.length) { msg.textContent = 'Firebase no disponible.'; return; }
+  const monto_usd = convertirAUsd(monto, moneda, tasa);
+  try {
+    await firebase.firestore().collection('transacciones').add({
+      fecha, mes: fecha.slice(0, 7), persona, descripcion, categoria,
+      moneda, monto, monto_usd, manual: true, lugar: null, tarjeta: null, referencia: null
+    });
+    document.getElementById('gmDesc').value = '';
+    document.getElementById('gmMonto').value = '';
+    await recargarTx();
+    msg.textContent = 'Gasto agregado.'; msg.className = base + ' text-emerald-400';
+  } catch (err) {
+    msg.textContent = 'Error al guardar: ' + err.message; msg.className = base + ' text-rose-400';
+  }
+});
+window.borrarGastoManual = async (id) => {
+  if (!firebase.apps.length || !id) return;
+  if (!confirm('¿Borrar este gasto manual?')) return;
+  try {
+    await firebase.firestore().collection('transacciones').doc(id).delete();
+    await recargarTx();
+  } catch (e) { console.warn('No se pudo borrar el gasto:', e.message); }
 };
 
 cargarDatos();
