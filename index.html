@@ -162,6 +162,15 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
     </div>
   </section>
 
+  <!-- Balance (ingreso − gasto) por mes -->
+  <section class="card p-5 mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <h2 class="text-sm font-semibold text-slate-300">Balance (ingreso − gasto) por mes</h2>
+      <span class="text-xs text-slate-500">Verde = superávit · rojo = déficit</span>
+    </div>
+    <div class="h-64"><canvas id="chartBalance"></canvas></div>
+  </section>
+
   <!-- Evolución del gasto por persona -->
   <section class="card p-5 mb-6">
     <h2 class="text-sm font-semibold text-slate-300 mb-3">Evolución del gasto por persona</h2>
@@ -307,6 +316,14 @@ const money = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits
 const money2 = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 const usd = t => (t.monto_usd ?? 0);
 const native = t => (t.moneda === 'CRC' ? '¢' : t.moneda === 'EUR' ? '€' : '$') + (t.monto ?? 0).toLocaleString('es-CR', {maximumFractionDigits:2});
+
+// Convierte "YYYY-MM" en "Nov 2026" (nombre de mes legible en español).
+const NOMBRES_MES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function nombreMes(m) {
+  const [y, mm] = String(m || '').split('-');
+  const n = parseInt(mm, 10);
+  return (n >= 1 && n <= 12) ? (NOMBRES_MES[n - 1] + ' ' + y) : String(m || '').replace('-', ' · ');
+}
 
 // Normaliza una descripción para emparejar el mismo comercio entre meses:
 // minúsculas, números largos → '#', espacios colapsados.
@@ -542,7 +559,7 @@ function renderCharts() {
   const meses = Object.keys(porMes).sort();
   mkChart('chartMeses', {
     type: 'line',
-    data: { labels: meses.map(m => m.replace('-',' · ')),
+    data: { labels: meses.map(m => nombreMes(m)),
       datasets: [
         { label: 'Gasto', data: meses.map(m => porMes[m]),
           borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.15)',
@@ -551,6 +568,32 @@ function renderCharts() {
           borderColor: '#94a3b8', borderDash: [6, 4], fill: false, tension: 0.35, borderWidth: 2, pointRadius: 0 }
       ] },
     options: { plugins: { legend: { labels: { color: '#94a3b8' } } },
+      scales: { y: { ticks: { color: '#64748b', callback: v => money(v) }, grid: { color: '#1f2a44' } },
+                x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
+  });
+}
+
+// Balance (ingreso − gasto) por mes, en el tiempo.
+function renderBalance() {
+  const porMes = agregar(t => t.mes, TX);
+  const mesesTx = Object.keys(porMes);
+  const mesesIng = INGRESOS.filter(i => i.tipo === 'esporadico').map(i => i.mes).filter(Boolean);
+  const meses = [...new Set([...mesesTx, ...mesesIng])].sort();
+  const datos = meses.map(m => {
+    const gasto = porMes[m] || 0;
+    const ingreso = ingresoTotalMes(m);
+    return { mes: m, gasto, ingreso, balance: ingreso - gasto };
+  });
+  const cols = datos.map(d => d.balance >= 0 ? 'rgba(52,211,153,0.85)' : 'rgba(244,63,94,0.85)');
+  mkChart('chartBalance', {
+    type: 'bar',
+    data: { labels: datos.map(d => nombreMes(d.mes)),
+      datasets: [{ label: 'Balance', data: datos.map(d => d.balance), backgroundColor: cols, borderRadius: 6 }] },
+    options: { plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => {
+          const d = datos[ctx.dataIndex];
+          return ['Balance ' + money(d.balance), 'Ingreso ' + money(d.ingreso), 'Gasto ' + money(d.gasto)];
+        } } } },
       scales: { y: { ticks: { color: '#64748b', callback: v => money(v) }, grid: { color: '#1f2a44' } },
                 x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
   });
@@ -598,7 +641,7 @@ function renderPersonasMes() {
   });
   mkChart('chartPersonasMes', {
     type: 'line',
-    data: { labels: meses.map(m => m.replace('-', ' · ')), datasets },
+    data: { labels: meses.map(m => nombreMes(m)), datasets },
     options: { plugins: { legend: { labels: { color: '#94a3b8' } } },
       scales: { y: { ticks: { color: '#64748b', callback: v => money(v) }, grid: { color: '#1f2a44' } },
                 x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
@@ -661,7 +704,7 @@ function renderAltas() {
   }));
   mkChart('chartAltas', {
     type: 'line',
-    data: { labels: a.meses.map(m => m.replace('-', ' · ')), datasets },
+    data: { labels: a.meses.map(m => nombreMes(m)), datasets },
     options: { plugins: { legend: { labels: { color: '#94a3b8' } } },
       scales: { y: { ticks: { color: '#64748b', callback: v => money(v) }, grid: { color: '#1f2a44' } },
                 x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
@@ -904,7 +947,7 @@ function renderMatriz() {
     + '<th class="py-2 pr-3 text-right">Promedio</th>'
     + '<th class="py-2 pr-3">Tendencia</th>'
     + '<th class="py-2 pr-3 text-right">Total</th>'
-    + m.meses.map(ms => `<th class="py-2 pr-3 text-right">${ms.replace('-', ' · ')}</th>`).join('')
+    + m.meses.map(ms => `<th class="py-2 pr-3 text-right">${nombreMes(ms)}</th>`).join('')
     + '</tr>';
 
   const umbral = m.granTotal / Math.max(1, m.filas.length);
@@ -953,7 +996,7 @@ function renderTabla() {
 function poblarSelectores() {
   const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort().reverse();
   const sel = document.getElementById('mesSel');
-  sel.innerHTML = meses.map(m => `<option value="${m}">${m.replace('-',' · ')}</option>`).join('');
+  sel.innerHTML = meses.map(m => `<option value="${m}">${nombreMes(m)}</option>`).join('');
   if (!meses.includes(mesActual)) mesActual = meses[0] || null;
   sel.value = mesActual || '';
 
@@ -970,6 +1013,7 @@ function render() {
   renderGastoManual();
   renderComparacion();
   renderCharts();
+  renderBalance();
   renderPersonasMes();
   renderAltas();
   renderPresupuesto();
