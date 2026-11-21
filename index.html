@@ -95,31 +95,36 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
     </div>
   </section>
 
+  <!-- Evolución: por mes | por persona -->
   <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
     <div class="card p-5">
       <h2 class="text-sm font-semibold text-slate-300 mb-3">Evolución del gasto por mes</h2>
-      <div class="h-56"><canvas id="chartMeses"></canvas></div>
+      <div class="h-64"><canvas id="chartMeses"></canvas></div>
     </div>
     <div class="card p-5">
-      <h2 class="text-sm font-semibold text-slate-300 mb-3">Presupuesto por persona</h2>
-      <div id="presupuestoPersonas" class="space-y-3"></div>
+      <h2 class="text-sm font-semibold text-slate-300 mb-3">Evolución del gasto por persona</h2>
+      <div class="h-64"><canvas id="chartPersonasMes"></canvas></div>
     </div>
   </section>
 
-  <!-- Balance (ingreso − gasto) por mes -->
-  <section class="card p-5 mb-6">
-    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-      <h2 class="text-sm font-semibold text-slate-300">Balance (ingreso − gasto) por mes</h2>
-      <span class="text-xs text-slate-500">Verde = superávit · rojo = déficit</span>
+  <!-- Balance por mes | Presupuesto por persona (figuras) -->
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <div class="card p-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h2 class="text-sm font-semibold text-slate-300">Balance (ingreso − gasto) por mes</h2>
+        <span class="text-xs text-slate-500">Verde = superávit · rojo = déficit</span>
+      </div>
+      <div class="h-64"><canvas id="chartBalance"></canvas></div>
+      <p id="balanceNota" class="text-xs text-slate-500 mt-2"></p>
     </div>
-    <div class="h-64"><canvas id="chartBalance"></canvas></div>
-    <p id="balanceNota" class="text-xs text-slate-500 mt-2"></p>
-  </section>
-
-  <!-- Evolución del gasto por persona -->
-  <section class="card p-5 mb-6">
-    <h2 class="text-sm font-semibold text-slate-300 mb-3">Evolución del gasto por persona</h2>
-    <div class="h-64"><canvas id="chartPersonasMes"></canvas></div>
+    <div class="card p-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h2 class="text-sm font-semibold text-slate-300">Presupuesto por persona</h2>
+        <span id="presuResumen" class="text-xs text-slate-500"></span>
+      </div>
+      <div id="presupuestoPersonas" class="space-y-2"></div>
+      <p class="text-xs text-slate-500 mt-3">La figura se llena según el % del presupuesto usado · verde = dentro · rojo = excedido.</p>
+    </div>
   </section>
 
   <!-- Evolución de categorías prioritarias (Alta) -->
@@ -361,6 +366,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
       <p><b>Evolución del gasto por mes:</b> línea del gasto comparada con la línea punteada del presupuesto.</p>
       <p><b>Balance (ingreso − gasto) por mes:</b> barras verdes (superávit) y rojas (déficit). Solo se grafican los meses que tienen ingresos y gastos registrados.</p>
       <p><b>Evolución del gasto por persona:</b> una línea por integrante para ver tendencias.</p>
+      <p><b>Presupuesto por persona:</b> una figura humana que se llena según el % del presupuesto usado (verde = dentro, rojo = excedido).</p>
       <p><b>Categorías prioritarias (Alta):</b> las que más pesan y su comercio más frecuente.</p>
       <p><b>Presupuesto por categoría:</b> barras de avance contra el monto asignado.</p>
       <p><b>Matriz categoría × mes:</b> prioridad (Alta/Baja), promedio, tendencia (verde sube / rojo baja) y totales.</p>
@@ -1163,17 +1169,49 @@ function renderPresupuesto() {
 
   const perEl = document.getElementById('presupuestoPersonas');
   const pp = PRESUPUESTO?.por_persona;
+  const resumenEl = document.getElementById('presuResumen');
   if (!pp) {
     perEl.innerHTML = '<p class="text-sm text-slate-500">Sin presupuesto configurado. Crea <code>config/presupuesto.json</code> o un doc <code>presupuesto/YYYY-MM</code> en Firestore.</p>';
+    if (resumenEl) resumenEl.textContent = '';
   } else {
-    perEl.innerHTML = Object.keys(pp).map(p => `
-      <div>
-        <div class="flex justify-between text-sm mb-1">
-          <span class="font-medium text-slate-200">${p}</span>
-          <span class="text-xs ${(porPer[p]||0) > pp[p] ? 'text-rose-400' : 'text-emerald-400'}">${money(porPer[p]||0)} / ${money(pp[p])}</span>
+    const ICONO = 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z';
+    let totalGasto = 0, totalTope = 0, excedidos = 0;
+    perEl.innerHTML = Object.keys(pp).map((p, i) => {
+      const gasto = porPer[p] || 0;
+      const tope = pp[p] || 0;
+      totalGasto += gasto; totalTope += tope;
+      const pct = tope > 0 ? (gasto / tope) * 100 : (gasto > 0 ? 100 : 0);
+      const excede = gasto > tope;
+      if (excede) excedidos++;
+      const color = excede ? '#f43f5e' : '#34d399';
+      const relleno = Math.min(pct, 100);
+      const hh = 24 * relleno / 100;
+      const yy = 24 - hh;
+      const detalle = tope > 0
+        ? Math.round(pct) + '%' + (excede ? ' · excedido ' + money(gasto - tope) : ' · disponible ' + money(tope - gasto))
+        : (gasto > 0 ? 'sin tope definido' : 'sin tope definido');
+      return `<div class="flex items-center gap-3 py-1">
+        <div class="w-10 h-10 shrink-0" title="${Math.round(pct)}% del presupuesto">
+          <svg viewBox="0 0 24 24" class="w-full h-full" aria-hidden="true">
+            <defs><clipPath id="clipPer${i}"><path d="${ICONO}"/></clipPath></defs>
+            <path d="${ICONO}" fill="#1c2740"/>
+            <g clip-path="url(#clipPer${i})"><rect x="0" y="${yy.toFixed(2)}" width="24" height="${hh.toFixed(2)}" fill="${color}"/></g>
+            <path d="${ICONO}" fill="none" stroke="#3b4a6b" stroke-width="0.4"/>
+          </svg>
         </div>
-        ${barra(porPer[p]||0, pp[p])}
-      </div>`).join('');
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-medium text-slate-200 truncate">${p}</span>
+            <span class="text-xs ${excede ? 'text-rose-400' : 'text-emerald-400'}">${money(gasto)} / ${money(tope)}</span>
+          </div>
+          <div class="text-xs text-slate-500 truncate">${detalle}</div>
+        </div>
+      </div>`;
+    }).join('');
+    if (resumenEl) {
+      resumenEl.textContent = money(totalGasto) + ' de ' + money(totalTope) + (excedidos ? ' · ' + excedidos + ' excedido(s)' : ' · todo en orden');
+      resumenEl.className = 'text-xs ' + (excedidos ? 'text-rose-400' : 'text-emerald-400');
+    }
   }
 
   const catEl = document.getElementById('presupuestoCategorias');

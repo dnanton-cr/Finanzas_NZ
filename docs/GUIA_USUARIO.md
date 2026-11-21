@@ -70,6 +70,12 @@ Una línea por integrante, para ver tendencias a lo largo de los meses.
 ### Evolución de categorías prioritarias (Alta)
 Las categorías que más pesan, con su **comercio más frecuente** y el promedio de transacciones por mes.
 
+### Presupuesto por persona
+Una **figura humana por integrante** que se llena de abajo hacia arriba según el % del presupuesto usado:
+- **Verde** mientras está dentro del presupuesto.
+- **Rojo** cuando lo excede (la figura se llena completa).
+Al lado se ven los montos (`gastado / tope`), el porcentaje y cuánto queda disponible o cuánto se excedió. Arriba de la tarjeta hay un resumen del total.
+
 ### Presupuesto por categoría
 Barras de avance: cuánto se lleva gastado de cada monto asignado.
 
