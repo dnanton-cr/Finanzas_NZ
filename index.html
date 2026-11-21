@@ -72,6 +72,18 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
     <div class="h-64"><canvas id="chartPersonasMes"></canvas></div>
   </section>
 
+  <!-- Evolución de categorías prioritarias (Alta) -->
+  <section class="card p-5 mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <h2 class="text-sm font-semibold text-slate-300">Evolución de categorías prioritarias (Alta)</h2>
+      <span class="text-xs text-slate-500">Alta = gasto por encima del promedio</span>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="h-72"><canvas id="chartAltas"></canvas></div>
+      <div id="comerciosAltas" class="space-y-3 self-center"></div>
+    </div>
+  </section>
+
   <!-- Presupuesto por categoría -->
   <section class="card p-5 mb-6">
     <h2 class="text-sm font-semibold text-slate-300 mb-3">Presupuesto por categoría</h2>
@@ -432,6 +444,80 @@ function renderPersonasMes() {
   });
 }
 
+function categoriasAlta() {
+  const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort();
+  const cats = [...new Set(TX.map(t => t.categoria).filter(Boolean))];
+  const tot = {}, cell = {};
+  for (const t of TX) {
+    if (!t.categoria) continue;
+    tot[t.categoria] = (tot[t.categoria] || 0) + (t.monto_usd || 0);
+    if (t.mes) { const k = t.categoria + '|' + t.mes; cell[k] = (cell[k] || 0) + (t.monto_usd || 0); }
+  }
+  const umbral = Object.values(tot).reduce((a, b) => a + b, 0) / Math.max(1, cats.length);
+  const altas = cats.filter(c => tot[c] >= umbral).sort((a, b) => tot[b] - tot[a]);
+  return { meses, altas, cell };
+}
+
+// Normaliza una descripción a un nombre de comercio corto (primeras 2 palabras).
+function limpiarComercio(d) {
+  let s = String(d || '').replace(/_/g, ' ');
+  s = s.replace(/^DLC\*?\s*/i, '');
+  s = s.replace(/\s+[A-Z]{3}$/, '');
+  s = s.replace(/\b\d{4,}\b/g, '');
+  s = s.replace(/\s+/g, ' ').trim();
+  return s.split(' ').filter(Boolean).slice(0, 2).join(' ');
+}
+
+function comercioTop(categoria) {
+  const cuenta = {};
+  for (const t of TX) {
+    if (t.categoria !== categoria) continue;
+    const c = limpiarComercio(t.descripcion);
+    if (!c) continue;
+    cuenta[c] = cuenta[c] || { total: 0, meses: new Set() };
+    cuenta[c].total++;
+    if (t.mes) cuenta[c].meses.add(t.mes);
+  }
+  let top = null;
+  for (const [nombre, x] of Object.entries(cuenta)) {
+    if (!top || x.total > top.total) top = { nombre, total: x.total, meses: x.meses.size };
+  }
+  if (top) top.avg = Math.round(top.total / Math.max(1, top.meses));
+  return top;
+}
+
+const titleCase = s => String(s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+
+function renderAltas() {
+  const a = categoriasAlta();
+  const cols = ['#f472b6', '#38bdf8', '#34d399', '#fbbf24', '#a78bfa', '#fb923c', '#22d3ee'];
+  const datasets = a.altas.map((c, i) => ({
+    label: c,
+    data: a.meses.map(m => a.cell[c + '|' + m] || 0),
+    borderColor: cols[i % cols.length],
+    backgroundColor: cols[i % cols.length] + '22',
+    fill: false, tension: 0.35, borderWidth: 2, pointRadius: 3, pointBackgroundColor: cols[i % cols.length]
+  }));
+  mkChart('chartAltas', {
+    type: 'line',
+    data: { labels: a.meses.map(m => m.replace('-', ' · ')), datasets },
+    options: { plugins: { legend: { labels: { color: '#94a3b8' } } },
+      scales: { y: { ticks: { color: '#64748b', callback: v => money(v) }, grid: { color: '#1f2a44' } },
+                x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
+  });
+
+  const cont = document.getElementById('comerciosAltas');
+  if (!cont) return;
+  cont.innerHTML = a.altas.map(c => {
+    const top = comercioTop(c);
+    if (!top) return '';
+    return '<div class="flex items-center justify-between gap-3 text-sm border-b border-slate-800/60 pb-2">'
+      + '<span class="text-slate-300 font-medium">' + c + '</span>'
+      + '<span class="text-xs text-slate-400 text-right">' + titleCase(top.nombre) + ' · ' + top.total + ' tx · ~' + top.avg + '/mes</span>'
+      + '</div>';
+  }).join('');
+}
+
 function renderPresupuesto() {
   const txs = txDelMes();
   const porPer = agregar(t => t.persona, txs);
@@ -612,6 +698,7 @@ function render() {
   renderKpis();
   renderCharts();
   renderPersonasMes();
+  renderAltas();
   renderPresupuesto();
   renderMatriz();
   renderTabla();
