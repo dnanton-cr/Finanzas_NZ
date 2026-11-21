@@ -54,11 +54,7 @@ con las reglas publicadas, no podrá leer nada porque el perfil es la base del p
 
 Al menos uno tiene que ser `admin` para poder administrar el resto.
 
-### 4. Publicar las reglas
-Firebase Console → **Firestore Database** → pestaña **Rules** → pegá el contenido de
-`firestore.rules` → **Publish**.
-
-### 5. Activar en la app
+### 4. Activar en la app
 En `index.html` cambiar:
 
 ```js
@@ -66,7 +62,17 @@ const SEGURIDAD_ACTIVA = false;   // → true
 ```
 
 y desplegar (push a `main`, Vercel redeploya). A partir de ahí la web pide correo y
-contraseña.
+contraseña. Los usuarios sin `rol: admin` quedan en modo consulta.
+
+### 5. Publicar las reglas
+Firebase Console → **Firestore Database** → pestaña **Rules** → pegá el contenido de
+`firestore.rules` → **Publish**.
+
+> **Orden importante:** activá el flag (paso 4) **antes** de publicar las reglas (paso 5).
+> Así no hay ventana sin servicio: la app ya pide login cuando las reglas estrictas entran
+> en vigor. Si publicás las reglas primero, la web queda sin datos hasta que despliegues el
+> flag (porque el modo actual lee sin sesión). Publicá las reglas dentro de los minutos
+> siguientes a la activación, para cerrar el acceso anónimo cuanto antes.
 
 ---
 
