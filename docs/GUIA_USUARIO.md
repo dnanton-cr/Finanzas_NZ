@@ -60,6 +60,8 @@ Una línea con el gasto de cada mes comparada con la **línea punteada del presu
 ### Balance (ingreso − gasto) por mes
 Barras **verdes** cuando hubo superávit y **rojas** cuando hubo déficit.
 
+Solo se grafican los meses que tienen **ingresos y gastos registrados**. Los meses con gastos pero sin ingresos (por ejemplo, gastos migrados de años anteriores) se excluyen para no distorsionar el balance.
+
 ### Evolución del gasto por persona
 Una línea por integrante, para ver tendencias a lo largo de los meses.
 
@@ -118,6 +120,8 @@ Para registrar lo que aporta cada persona:
 - **Tipo:** *Mensual* (cuenta todos los meses) o *Esporádico* (solo el mes indicado)
 - **Fecha** (solo si es esporádico)
 
+Abajo del formulario está **"Ingresos registrados desde"**: la fecha desde la cual hay datos de ingreso confiables. Sirve para que los gastos viejos migrados no aparezcan como déficit.
+
 ### d) Gasto manual (sin tarjeta)
 Para pagos que no pasan por tarjeta: efectivo, transferencias, mensualidades del colegio, mantenimiento de la casa.
 
@@ -138,6 +142,7 @@ Para pagos que no pasan por tarjeta: efectivo, transferencias, mensualidades del
 - **Categorías:** 13 categorías + "Otros". La app aprende de las correcciones que hagas.
 - **Fechas:** salen del número de referencia del estado de cuenta BAC y pueden variar 1–2 días respecto a la compra real.
 - **Nada se duplica:** al subir un estado o un archivo repetido, se actualiza en vez de duplicar.
+- **Corte de ingresos:** si migraste gastos de años anteriores, definí **"Ingresos registrados desde"** (en *Ingresar datos* → Ingresos). Los meses anteriores a esa fecha se excluyen del balance y del gráfico histórico.
 
 ---
 

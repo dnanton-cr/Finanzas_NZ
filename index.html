@@ -91,6 +91,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
       <span class="text-xs text-slate-500">Verde = superávit · rojo = déficit</span>
     </div>
     <div class="h-64"><canvas id="chartBalance"></canvas></div>
+    <p id="balanceNota" class="text-xs text-slate-500 mt-2"></p>
   </section>
 
   <!-- Evolución del gasto por persona -->
@@ -251,6 +252,15 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
     </form>
     <p id="ingresoMsg" class="text-xs mt-2 min-h-4"></p>
     <div id="ingresosLista" class="mt-2 space-y-1"></div>
+    <div class="flex flex-wrap items-end gap-3 mt-4 pt-4 border-t border-slate-800">
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">Ingresos registrados desde</label>
+        <input id="ingDesde" type="month" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <button id="ingDesdeGuardar" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm">Guardar</button>
+      <span id="ingDesdeMsg" class="text-xs"></span>
+    </div>
+    <p class="text-xs text-slate-500 mt-2">Los meses anteriores a esta fecha se excluyen del balance y del gráfico histórico (útil si migraste gastos viejos sin ingresos).</p>
   </section>
   <!-- Gasto manual (sin tarjeta) -->
   <section class="card p-5 mb-6">
@@ -327,7 +337,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
       <p><b>Gasto vs ingreso por persona:</b> barras y tabla con el neto de cada integrante.</p>
       <p><b>Gasto por categoría y por persona:</b> en qué se va la plata y cómo se reparte entre los cuatro.</p>
       <p><b>Evolución del gasto por mes:</b> línea del gasto comparada con la línea punteada del presupuesto.</p>
-      <p><b>Balance (ingreso − gasto) por mes:</b> barras verdes (superávit) y rojas (déficit).</p>
+      <p><b>Balance (ingreso − gasto) por mes:</b> barras verdes (superávit) y rojas (déficit). Solo se grafican los meses que tienen ingresos y gastos registrados.</p>
       <p><b>Evolución del gasto por persona:</b> una línea por integrante para ver tendencias.</p>
       <p><b>Categorías prioritarias (Alta):</b> las que más pesan y su comercio más frecuente.</p>
       <p><b>Presupuesto por categoría:</b> barras de avance contra el monto asignado.</p>
@@ -371,6 +381,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
       <li><b>Categorías:</b> 13 categorías + "Otros". La app aprende de tus correcciones.</li>
       <li><b>Fechas:</b> salen de la referencia del estado de cuenta BAC y pueden variar 1–2 días de la compra real.</li>
       <li><b>Nada se duplica</b> al subir un estado o archivo repetido.</li>
+      <li><b>Corte de ingresos:</b> si migraste gastos de años anteriores, definí <b>"Ingresos registrados desde"</b> en <i>Ingresar datos</i>; los meses anteriores se excluyen del balance.</li>
     </ul>
   </section>
 
@@ -459,6 +470,7 @@ let CATEGORIAS = [];          // lista completa de categorias (config + datos)
 let ESTADOS = {};             // nombre de archivo ya subido -> {fecha, n_tx}
 let NOMBRE_ACTUAL = null;     // archivo en revisión
 let INGRESOS = [];            // aportes {_id, persona, proyecto, monto_usd, tipo, fecha?, mes?}
+let INGRESO_DESDE = null;     // 'YYYY-MM' — meses anteriores se excluyen del balance (datos migrados)
 let PROYECTOS = [];           // lista de proyectos
 
 const money = n => '$' + (n ?? 0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
@@ -543,6 +555,28 @@ async function cargarIngresos() {
   PROYECTOS = [...new Set(INGRESOS.map(i => i.proyecto).filter(Boolean))].sort();
 }
 
+// Corte de ingresos: los meses anteriores se consideran "sin datos de ingreso"
+// (típico cuando se migran gastos de años anteriores). Se fija en config/ingresos.
+async function cargarConfigIngresos() {
+  INGRESO_DESDE = null;
+  if (firebase.apps.length) {
+    try {
+      const d = await firebase.firestore().collection('config').doc('ingresos').get();
+      if (d.exists && d.data().desde) INGRESO_DESDE = d.data().desde;
+    } catch (e) { console.warn('config/ingresos no disponible:', e.message); }
+  }
+}
+// Primer mes con datos de ingreso realmente registrados.
+function primerMesIngresoDerivado() {
+  let min = null;
+  for (const i of INGRESOS) {
+    const m = i.tipo === 'esporadico' ? (i.mes || String(i.fecha || '').slice(0, 7)) : i.desde;
+    if (m && (!min || m < min)) min = m;
+  }
+  return min;
+}
+function corteIngresos() { return INGRESO_DESDE || primerMesIngresoDerivado(); }
+
 function listaPersonas() {
   const cfg = (CONFIG && CONFIG.personas) ? Object.values(CONFIG.personas) : [];
   const s = new Set([...cfg, ...TX.map(t => t.persona), ...INGRESOS.map(i => i.persona)].filter(Boolean));
@@ -551,19 +585,27 @@ function listaPersonas() {
 
 // Aporte mensual de una persona: recurrentes (siempre) + esporádicos del mes.
 function ingresoPersonaMes(persona, mes) {
+  const corte = corteIngresos();
+  if (corte && mes && mes < corte) return 0;
   let total = 0;
   for (const i of INGRESOS) {
     if (i.persona !== persona) continue;
-    if (i.tipo === 'recurrente') total += i.monto_usd || 0;
-    else if (i.mes === mes) total += i.monto_usd || 0;
+    if (i.tipo === 'recurrente') {
+      const desde = i.desde || corte;
+      if (!desde || mes >= desde) total += i.monto_usd || 0;
+    } else if (i.mes === mes) total += i.monto_usd || 0;
   }
   return total;
 }
 function ingresoTotalMes(mes) {
+  const corte = corteIngresos();
+  if (corte && mes && mes < corte) return 0;
   let total = 0;
   for (const i of INGRESOS) {
-    if (i.tipo === 'recurrente') total += i.monto_usd || 0;
-    else if (i.mes === mes) total += i.monto_usd || 0;
+    if (i.tipo === 'recurrente') {
+      const desde = i.desde || corte;
+      if (!desde || mes >= desde) total += i.monto_usd || 0;
+    } else if (i.mes === mes) total += i.monto_usd || 0;
   }
   return total;
 }
@@ -595,6 +637,7 @@ async function cargarDatos() {
   await corregirPersonas();
   await cargarEstados();
   await cargarIngresos();
+  await cargarConfigIngresos();
   await cargarPresupuesto();
   render();
 }
@@ -660,13 +703,15 @@ function renderKpis() {
   const presupTotal = PRESUPUESTO?.total ?? null;
   const dif = presupTotal != null ? total - presupTotal : null;
   const ingMes = ingresoTotalMes(mesActual);
+  const hayIngreso = ingMes > 0;
   const balance = ingMes - total;
 
   const kpis = [
     { label: 'Gasto del mes', valor: money(total), sub: `${txs.length} transacciones` },
     { label: 'Ingresos del mes', valor: money(ingMes), sub: 'aportes (mensuales + esporádicos)' },
-    { label: 'Balance del mes', valor: money(balance), sub: balance >= 0 ? 'positivo' : 'negativo',
-      color: balance >= 0 ? 'text-emerald-400' : 'text-rose-400' },
+    { label: 'Balance del mes', valor: hayIngreso ? money(balance) : '—',
+      sub: hayIngreso ? (balance >= 0 ? 'positivo' : 'negativo') : 'sin ingresos registrados',
+      color: hayIngreso ? (balance >= 0 ? 'text-emerald-400' : 'text-rose-400') : 'text-slate-500' },
     { label: 'Presupuesto', valor: presupTotal != null ? money(presupTotal) : '—', sub: dif != null
         ? (dif <= 0 ? `Disponible ${money(-dif)}` : `Excedido ${money(dif)}`) : 'sin presupuesto',
       color: dif != null && dif > 0 ? 'text-rose-400' : 'text-emerald-400' },
@@ -725,14 +770,17 @@ function renderCharts() {
 // Balance (ingreso − gasto) por mes, en el tiempo.
 function renderBalance() {
   const porMes = agregar(t => t.mes, TX);
-  const mesesTx = Object.keys(porMes);
-  const mesesIng = INGRESOS.filter(i => i.tipo === 'esporadico').map(i => i.mes).filter(Boolean);
-  const meses = [...new Set([...mesesTx, ...mesesIng])].sort();
-  const datos = meses.map(m => {
+  const corte = corteIngresos();
+  const mesesTx = Object.keys(porMes).filter(Boolean).sort();
+  let excluidos = 0;
+  const datos = [];
+  // Solo se grafica el balance de meses que tienen ingreso Y gasto registrados.
+  for (const m of mesesTx) {
     const gasto = porMes[m] || 0;
     const ingreso = ingresoTotalMes(m);
-    return { mes: m, gasto, ingreso, balance: ingreso - gasto };
-  });
+    if (gasto > 0 && ingreso > 0) datos.push({ mes: m, gasto, ingreso, balance: ingreso - gasto });
+    else if (gasto > 0) excluidos++;
+  }
   const cols = datos.map(d => d.balance >= 0 ? 'rgba(52,211,153,0.85)' : 'rgba(244,63,94,0.85)');
   mkChart('chartBalance', {
     type: 'bar',
@@ -746,6 +794,13 @@ function renderBalance() {
       scales: { y: { ticks: { color: '#64748b', callback: v => money(v) }, grid: { color: '#1f2a44' } },
                 x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
   });
+  const nota = document.getElementById('balanceNota');
+  if (nota) {
+    const partes = [];
+    if (excluidos > 0) partes.push(excluidos + ' mes(es) con gastos pero sin ingresos registrados se excluyeron del gráfico');
+    if (corte) partes.push('ingresos considerados desde ' + nombreMes(corte));
+    nota.textContent = partes.length ? partes.join(' · ') + '.' : '';
+  }
 }
 
 function barra(actual, presup) {
@@ -948,6 +1003,8 @@ function renderGastoManual() {
 }
 
 function renderIngresos() {
+  const desdeEl = document.getElementById('ingDesde');
+  if (desdeEl && document.activeElement !== desdeEl) desdeEl.value = corteIngresos() || '';
   const sel = document.getElementById('ingPersona');
   if (sel) sel.innerHTML = listaPersonas().map(p => `<option>${p}</option>`).join('');
   const dl = document.getElementById('proyectosList');
@@ -987,6 +1044,10 @@ function renderComparacion() {
   });
   const cont = document.getElementById('comparacionPersonas');
   if (!cont) return;
+  if (INGRESOS.length && ingresoTotalMes(mesActual) === 0) {
+    cont.innerHTML = '<p class="text-sm text-slate-500">Sin ingresos registrados para este mes.</p>';
+    return;
+  }
   cont.innerHTML = personas.map(p => {
     const g = gastoPor[p] || 0;
     const ing = ingresoPersonaMes(p, mesActual);
@@ -1389,6 +1450,7 @@ async function recargarTx() {
   construirCatalogos();
   await corregirPersonas();
   await cargarIngresos();
+  await cargarConfigIngresos();
   await cargarPresupuesto();
   render();
 }
@@ -1400,6 +1462,17 @@ document.getElementById('ingTipo').addEventListener('change', e => {
 document.getElementById('ingMoneda').addEventListener('change', actualizarTasaIngreso);
 document.getElementById('ingMonto').addEventListener('input', preverIngreso);
 document.getElementById('ingTasa').addEventListener('input', preverIngreso);
+document.getElementById('ingDesdeGuardar').addEventListener('click', async () => {
+  const msg = document.getElementById('ingDesdeMsg');
+  const val = document.getElementById('ingDesde').value || null;
+  if (!firebase.apps.length) { msg.textContent = 'Firebase no disponible.'; msg.className = 'text-xs text-rose-400'; return; }
+  try {
+    await firebase.firestore().collection('config').doc('ingresos').set({ desde: val }, { merge: true });
+    INGRESO_DESDE = val;
+    msg.textContent = 'Guardado.'; msg.className = 'text-xs text-emerald-400';
+    render();
+  } catch (e) { msg.textContent = 'Error: ' + e.message; msg.className = 'text-xs text-rose-400'; }
+});
 document.getElementById('ingresoForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msg = document.getElementById('ingresoMsg');
