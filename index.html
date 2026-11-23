@@ -67,6 +67,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
   <!-- Pestañas -->
   <div class="flex flex-wrap gap-2 mb-6">
     <button id="tabResultados" onclick="mostrarPanel('resultados')" class="tab-btn tab-active">📊 Resultados</button>
+    <button id="tabProveedor" onclick="mostrarPanel('proveedor')" class="tab-btn">🔎 Proveedor</button>
     <button id="tabIngresar" onclick="mostrarPanel('ingresar')" class="tab-btn">📥 Ingresar datos</button>
     <button id="tabGuia" onclick="mostrarPanel('guia')" class="tab-btn">❓ Guía</button>
   </div>
@@ -186,6 +187,101 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
     </div>
   </section>
 
+</div>
+
+<div id="panelProveedor" class="hidden">
+
+  <!-- Consulta -->
+  <section class="card p-5 mb-6">
+    <div class="flex flex-col lg:flex-row lg:items-end gap-3">
+      <div class="flex-1 min-w-48">
+        <label for="provTexto" class="text-xs text-slate-400 mb-1 block">Proveedor o texto del cobro</label>
+        <input id="provTexto" list="provSugerencias" autocomplete="off" placeholder="Ej.: AYA, CNFL, ICE, Uber…"
+               class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500">
+        <datalist id="provSugerencias"></datalist>
+      </div>
+      <div>
+        <label for="provPersona" class="text-xs text-slate-400 mb-1 block">Persona</label>
+        <select id="provPersona" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none"></select>
+      </div>
+      <div>
+        <label for="provCategoria" class="text-xs text-slate-400 mb-1 block">Categoría</label>
+        <select id="provCategoria" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none"></select>
+      </div>
+      <div>
+        <label for="provPeriodo" class="text-xs text-slate-400 mb-1 block">Periodo</label>
+        <select id="provPeriodo" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none">
+          <option value="">Todo el histórico</option>
+          <option value="6">Últimos 6 meses</option>
+          <option value="12">Últimos 12 meses</option>
+          <option value="24">Últimos 24 meses</option>
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <button id="provLimpiar" class="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-300 hover:text-white">Limpiar</button>
+        <button id="provExportar" class="px-3 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs text-white font-medium">Exportar CSV</button>
+      </div>
+    </div>
+    <p class="text-xs text-slate-500 mt-3">La consulta se actualiza al escribir e ignora acentos, espacios y números de contrato: <span class="text-slate-400">aya</span> encuentra «A Y A PAR 3233768» y <span class="text-slate-400">cnfl</span> encuentra «CNFL PAR 274220». Usa el histórico completo, sin el filtro «análisis desde».</p>
+  </section>
+
+  <!-- Sugerencias (sin búsqueda activa) -->
+  <section id="provVacio" class="card p-6 mb-6">
+    <p class="text-sm text-slate-300">Elegí un proveedor para ver cómo evolucionaron sus cobros. Los más frecuentes de tu histórico:</p>
+    <div id="provChips" class="flex flex-wrap gap-2 mt-3"></div>
+  </section>
+
+  <div id="provResultados" class="hidden">
+    <section id="provKpis" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6"></section>
+
+    <section class="card p-5 mb-6">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h2 class="text-sm font-semibold text-slate-300">Evolución mensual del proveedor</h2>
+        <span id="provResumen" class="text-xs text-slate-500"></span>
+      </div>
+      <div class="h-72"><canvas id="chartProveedor"></canvas></div>
+      <p id="provNota" class="text-xs text-slate-500 mt-2"></p>
+    </section>
+
+    <section class="card p-5 mb-6">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h2 class="text-sm font-semibold text-slate-300">Comparación mes a mes</h2>
+        <span class="text-xs text-slate-500">Verde = bajó · rojo = subió</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-slate-500 text-xs uppercase tracking-wide border-b border-slate-700">
+              <th class="py-2 pr-3">Mes</th>
+              <th class="py-2 pr-3 text-right">Cobros</th>
+              <th class="py-2 pr-3 text-right">Total</th>
+              <th class="py-2 pr-3 text-right">Δ mes anterior</th>
+              <th class="py-2 text-right">Δ mismo mes año ant.</th>
+            </tr>
+          </thead>
+          <tbody id="provTabla" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card p-5">
+      <h2 class="text-sm font-semibold text-slate-300 mb-3">Detalle de cobros <span id="provCount" class="text-slate-500 font-normal"></span></h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-slate-500 text-xs uppercase tracking-wide border-b border-slate-700">
+              <th class="py-2 pr-3">Fecha</th>
+              <th class="py-2 pr-3">Persona</th>
+              <th class="py-2 pr-3">Descripción</th>
+              <th class="py-2 pr-3">Categoría</th>
+              <th class="py-2 text-right">Monto</th>
+            </tr>
+          </thead>
+          <tbody id="provDetalle" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
 </div>
 
 <div id="panelIngresar" class="hidden">
@@ -348,9 +444,10 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
   </section>
 
   <section class="card p-6 mb-6">
-    <h3 class="text-sm font-semibold text-sky-400 mb-3">Las dos pestañas de trabajo</h3>
+    <h3 class="text-sm font-semibold text-sky-400 mb-3">Las tres pestañas de trabajo</h3>
     <ul class="space-y-2 text-sm text-slate-300">
       <li><b>📊 Resultados</b> → para consultar la información.</li>
+      <li><b>🔎 Proveedor</b> → para ver cuánto cobra un proveedor mes a mes (AyA, CNFL, ICE…) y si sus cobros han bajado.</li>
       <li><b>📥 Ingresar datos</b> → para cargar movimientos nuevos.</li>
     </ul>
     <p class="text-xs text-slate-500 mt-3">Todo lo que se carga aparece al instante en Resultados.</p>
@@ -375,7 +472,18 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui',
   </section>
 
   <section class="card p-6 mb-6">
-    <h3 class="text-sm font-semibold text-sky-400 mb-3">2) Pestaña Ingresar datos</h3>
+    <h3 class="text-sm font-semibold text-sky-400 mb-3">2) Pestaña Proveedor</h3>
+    <div class="space-y-3 text-sm text-slate-300">
+      <p><b>Para qué sirve:</b> seguir un proveedor específico en el tiempo —por ejemplo los cobros del agua (AyA)— y comparar si ha bajado o subido. Trabaja con <b>todo el histórico</b>, sin depender del mes elegido arriba.</p>
+      <p><b>Cómo se usa:</b> escribí el nombre en el campo (o tocá uno de los proveedores frecuentes) y la consulta se arma sola. Ignora acentos, espacios y números de contrato: <code>aya</code> encuentra «A Y A PAR 3233768», <code>cnfl</code> encuentra «CNFL PAR 274220» y también «C.N.F.L.PAGUELO 274220».</p>
+      <p><b>Qué muestra:</b> total histórico y promedio por mes; último cobro; <b>tendencia</b> (promedio de los últimos 3 meses con cobro contra los 3 anteriores); mes más alto; gráfico de barras por mes con la línea del promedio; tabla mes a mes con la variación contra el mes anterior y contra el mismo mes del año pasado; y el detalle de cada cobro.</p>
+      <p><b>Cómo leer los colores:</b> en gastos, <span class="text-emerald-400">verde = el cobro bajó</span> y <span class="text-rose-400">rojo = subió</span>. Los meses sin cobro aparecen en 0 para que se note una interrupción.</p>
+      <p><b>Filtros:</b> persona, categoría y periodo (6, 12 o 24 meses). <b>Exportar CSV</b> descarga la tabla mensual y el detalle para abrirlo en Excel.</p>
+    </div>
+  </section>
+
+  <section class="card p-6 mb-6">
+    <h3 class="text-sm font-semibold text-sky-400 mb-3">3) Pestaña Ingresar datos</h3>
     <div class="space-y-4 text-sm text-slate-300">
       <div>
         <p class="font-semibold text-slate-200">a) Estado de cuenta (PDF)</p>
@@ -1374,22 +1482,330 @@ function poblarSelectores() {
   document.getElementById('filtroCategoria').innerHTML = '<option value="">Todas las categorías</option>' + cats.map(c => `<option>${c}</option>`).join('');
 }
 
-// Cambia entre las pestañas: resultados, ingresar datos y guía.
+// ─────────────────── Consulta por proveedor ───────────────────
+// Responde "¿cuánto me cobra X al mes y ha bajado?" (AyA, CNFL, ICE, Uber…)
+// sobre todo el histórico, sin depender del mes seleccionado en el encabezado.
+
+function provTokens(s) {
+  return String(s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z]+/g, ' ')
+    .split(' ').filter(Boolean);
+}
+function provCompacto(s) { return provTokens(s).join(''); }
+
+// Ventanas de 1..5 palabras consecutivas, concatenadas sin espacios. En el
+// estado de cuenta el comercio abre la descripción y las columnas estrechas
+// parten el texto ("A Y A" = "AYA"), así que se comparan concatenaciones y la
+// búsqueda debe INICIAR una ventana: "aya" no hace match con "guacamaya".
+// Solo desde 5 letras se acepta coincidencia parcial ("cafeter" → "cafeteria"),
+// para no arrastrar ruido ("agua" dentro de "jaguar").
+function provVentanas(desc) {
+  const t = provTokens(desc), out = [];
+  for (let i = 0; i < t.length; i++) {
+    let acc = '';
+    for (let n = 1; n <= 5 && i + n <= t.length; n++) { acc += t[i + n - 1]; out.push(acc); }
+  }
+  return out;
+}
+function provCoincide(desc, q) {
+  if (!q) return true;
+  const v = provVentanas(desc);
+  for (let i = 0; i < v.length; i++) if (v[i].startsWith(q)) return true;
+  if (q.length >= 5) for (let i = 0; i < v.length; i++) if (v[i].includes(q)) return true;
+  return false;
+}
+// Nombre del comercio: la descripción sin el número de contrato/factura.
+function provComercio(desc) {
+  return String(desc || '').split(/\s+\d/)[0].replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+}
+// Variación % (null si no hay base de comparación).
+function provDelta(actual, previo) {
+  if (!previo || !isFinite(previo)) return null;
+  return (actual - previo) / previo * 100;
+}
+// En gastos, bajar es bueno: verde = redujo, rojo = subió.
+function provCeldaDelta(p) {
+  if (p === null || !isFinite(p)) return '<span class="text-slate-600">—</span>';
+  const col = p < -0.5 ? 'text-emerald-400' : p > 0.5 ? 'text-rose-400' : 'text-slate-400';
+  const ico = p < -0.5 ? '▼' : p > 0.5 ? '▲' : '=';
+  return `<span class="${col}">${ico} ${Math.abs(p).toFixed(0)}%</span>`;
+}
+
+function provFiltradas() {
+  const q = provCompacto(document.getElementById('provTexto').value);
+  const fp = document.getElementById('provPersona').value;
+  const fc = document.getElementById('provCategoria').value;
+  const per = document.getElementById('provPeriodo').value;
+  let desde = null;
+  if (per) {
+    const meses = [...new Set(TX.map(t => t.mes).filter(Boolean))].sort();
+    const ultimo = meses[meses.length - 1];
+    if (ultimo) {
+      const [y, m] = ultimo.split('-').map(Number);
+      const d = new Date(y, m - 1 - (Number(per) - 1), 1);
+      desde = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+  }
+  const txs = TX
+    .filter(t => provCoincide(t.descripcion, q))
+    .filter(t => !fp || t.persona === fp)
+    .filter(t => !fc || t.categoria === fc)
+    .filter(t => !desde || (t.mes || String(t.fecha || '').slice(0, 7)) >= desde)
+    .sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+  return { q, txs };
+}
+
+// Rellena selectores, chips de proveedores frecuentes y sugerencias del input.
+function provPoblar() {
+  const setSel = (id, primero, valores) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const previo = sel.value;
+    sel.innerHTML = `<option value="">${primero}</option>` + valores.map(v => `<option>${v}</option>`).join('');
+    if (valores.includes(previo)) sel.value = previo;
+  };
+  setSel('provPersona', 'Todas las personas', [...new Set(TX.map(t => t.persona).filter(Boolean))].sort());
+  setSel('provCategoria', 'Todas las categorías', [...new Set(TX.map(t => t.categoria).filter(Boolean))].sort());
+
+  // Comercios frecuentes (agrupados por nombre sin números), para chips y datalist.
+  const cuenta = {};
+  for (const t of TX) {
+    const c = provComercio(t.descripcion);
+    if (!c || c.length < 3) continue;
+    const k = provCompacto(c);
+    if (!k) continue;
+    if (!cuenta[k]) cuenta[k] = { nombre: c, n: 0, usd: 0 };
+    cuenta[k].n++; cuenta[k].usd += usd(t);
+  }
+  const top = Object.values(cuenta).sort((a, b) => b.n - a.n).slice(0, 18);
+  const chips = document.getElementById('provChips');
+  if (chips) {
+    chips.innerHTML = top.map(c => `
+      <button data-prov="${c.nombre.replace(/"/g, '&quot;')}"
+              class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-300 hover:text-white hover:border-sky-500">
+        ${c.nombre} <span class="text-slate-500">· ${c.n}</span>
+      </button>`).join('');
+    chips.onclick = e => {
+      const b = e.target.closest('button[data-prov]');
+      if (!b) return;
+      document.getElementById('provTexto').value = b.dataset.prov;
+      renderProveedor();
+    };
+  }
+  const dl = document.getElementById('provSugerencias');
+  if (dl) dl.innerHTML = top.map(c => `<option value="${c.nombre.replace(/"/g, '&quot;')}">`).join('');
+}
+
+function renderProveedor() {
+  const { q, txs } = provFiltradas();
+  const vacio = document.getElementById('provVacio');
+  const res = document.getElementById('provResultados');
+  const matarChart = () => { if (charts.chartProveedor) { charts.chartProveedor.destroy(); delete charts.chartProveedor; } };
+  if (!vacio || !res) return;
+
+  if (!q) {
+    res.classList.add('hidden'); vacio.classList.remove('hidden');
+    matarChart();
+    return;
+  }
+  vacio.classList.add('hidden'); res.classList.remove('hidden');
+
+  if (!txs.length) {
+    document.getElementById('provKpis').innerHTML = '';
+    document.getElementById('provResumen').textContent = '';
+    document.getElementById('provNota').textContent = '';
+    document.getElementById('provCount').textContent = '';
+    document.getElementById('provTabla').innerHTML = '<tr><td colspan="5" class="py-4 text-center text-slate-500">Sin cobros para esa búsqueda</td></tr>';
+    document.getElementById('provDetalle').innerHTML = '';
+    matarChart();
+    return;
+  }
+
+  // Agregado por mes
+  const porMes = {};
+  for (const t of txs) {
+    const m = t.mes || String(t.fecha || '').slice(0, 7);
+    if (!m) continue;
+    const a = porMes[m] || (porMes[m] = { mes: m, n: 0, usd: 0, crc: 0, usdNativo: 0 });
+    a.n++;
+    a.usd += usd(t);
+    if (t.moneda === 'CRC') a.crc += Number(t.monto) || 0;
+    else if (t.moneda === 'USD') a.usdNativo += Number(t.monto) || 0;
+  }
+
+  // Serie continua (meses sin cobro = 0): así se ve una reducción a cero.
+  const claves = Object.keys(porMes).sort();
+  const serie = [];
+  let [y0, m0] = claves[0].split('-').map(Number);
+  const [y1, m1] = claves[claves.length - 1].split('-').map(Number);
+  while (y0 < y1 || (y0 === y1 && m0 <= m1)) {
+    const k = y0 + '-' + String(m0).padStart(2, '0');
+    serie.push(porMes[k] || { mes: k, n: 0, usd: 0, crc: 0, usdNativo: 0 });
+    m0++; if (m0 > 12) { m0 = 1; y0++; }
+  }
+
+  const totalUSD = txs.reduce((s, t) => s + usd(t), 0);
+  const conCobro = serie.filter(x => x.n > 0);
+  const promMes = conCobro.length ? totalUSD / conCobro.length : 0;
+  const ultimo = txs[txs.length - 1];
+  const max = conCobro.slice().sort((a, b) => b.usd - a.usd)[0];
+  // Tendencia: promedio de los 3 últimos meses con cobro vs los 3 anteriores.
+  const ult3 = conCobro.slice(-3), prev3 = conCobro.slice(-6, -3);
+  const prom = arr => arr.length ? arr.reduce((s, x) => s + x.usd, 0) / arr.length : null;
+  const tend = (ult3.length && prev3.length) ? provDelta(prom(ult3), prom(prev3)) : null;
+  const tendCol = tend === null ? 'text-slate-400' : tend < -0.5 ? 'text-emerald-400' : tend > 0.5 ? 'text-rose-400' : 'text-slate-300';
+  const tendIco = tend === null ? '' : tend < -0.5 ? '▼ ' : tend > 0.5 ? '▲ ' : '= ';
+
+  const kpis = [
+    { label: 'Total histórico', valor: money2(totalUSD), sub: txs.length + ' cobro(s) en ' + conCobro.length + ' mes(es)' },
+    { label: 'Promedio por mes', valor: money2(promMes), sub: 'solo meses con cobro' },
+    { label: 'Último cobro', valor: money2(usd(ultimo)), sub: nombreMes(ultimo.mes || String(ultimo.fecha).slice(0, 7)) },
+    { label: 'Tendencia 3 vs 3 meses', valor: tend === null ? '—' : tendIco + Math.abs(tend).toFixed(0) + '%',
+      sub: 'últimos 3 meses vs 3 anteriores', color: tendCol },
+    { label: 'Mes más alto', valor: money2(max.usd), sub: nombreMes(max.mes) + ' · ' + max.n + ' cobro(s)' },
+  ];
+  document.getElementById('provKpis').innerHTML = kpis.map(k => `
+    <div class="card p-4">
+      <div class="text-xs text-slate-400">${k.label}</div>
+      <div class="text-xl font-bold text-white mt-1 ${k.color || ''}">${k.valor}</div>
+      <div class="text-xs text-slate-500 mt-1">${k.sub}</div>
+    </div>`).join('');
+
+  document.getElementById('provResumen').textContent =
+    nombreMes(serie[0].mes) + ' → ' + nombreMes(serie[serie.length - 1].mes) + ' · promedio ' + money2(promMes);
+
+  const nota = ['Montos convertidos a USD (₡' + USD_CRC + ' por $1).'];
+  const cero = serie.filter(x => x.n === 0).length;
+  if (cero) nota.push(cero + ' mes(es) sin cobro se muestran en 0.');
+  if (document.getElementById('provPersona').value) nota.push('filtrado por persona: ' + document.getElementById('provPersona').value);
+  document.getElementById('provNota').textContent = nota.join(' ');
+
+  // Gráfico: barras del mes + línea del promedio
+  mkChart('chartProveedor', {
+    type: 'bar',
+    data: {
+      labels: serie.map(x => nombreMes(x.mes)),
+      datasets: [
+        { label: 'Total del mes', data: serie.map(x => x.usd), borderRadius: 5, order: 2,
+          backgroundColor: serie.map(x => x.n ? 'rgba(14,165,233,0.8)' : 'rgba(100,116,139,0.3)') },
+        { label: 'Promedio', data: serie.map(() => promMes), type: 'line', order: 1,
+          borderColor: 'rgba(251,191,36,0.9)', borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false },
+      ]
+    },
+    options: {
+      plugins: {
+        legend: { labels: { color: '#94a3b8', boxWidth: 12 } },
+        tooltip: { callbacks: { label: ctx => {
+          if (ctx.datasetIndex === 1) return 'Promedio ' + money2(ctx.parsed.y);
+          const d = serie[ctx.dataIndex];
+          return ['Total ' + money2(d.usd), d.n + ' cobro(s)'];
+        } } }
+      },
+      scales: {
+        y: { ticks: { color: '#64748b', callback: v => money(v) }, grid: { color: '#1f2a44' } },
+        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+      }
+    }
+  });
+
+  // Tabla comparativa (mes más reciente primero)
+  document.getElementById('provTabla').innerHTML = serie.slice().reverse().map(x => {
+    const idx = serie.findIndex(s => s.mes === x.mes);
+    const prev = idx > 0 ? serie[idx - 1] : null;
+    const [yy, mm] = x.mes.split('-').map(Number);
+    const mismo = porMes[(yy - 1) + '-' + String(mm).padStart(2, '0')] || null;
+    const dPrev = prev ? provDelta(x.usd, prev.usd) : null;
+    const dYear = mismo ? provDelta(x.usd, mismo.usd) : null;
+    const nativo = x.crc ? `<div class="text-xs text-slate-500 font-normal">¢${x.crc.toLocaleString('es-CR', { maximumFractionDigits: 0 })}</div>` : '';
+    return `<tr class="hover:bg-slate-800/50 ${x.n ? '' : 'opacity-60'}">
+      <td class="py-2 pr-3 whitespace-nowrap">${nombreMes(x.mes)}</td>
+      <td class="py-2 pr-3 text-right text-slate-400">${x.n || '—'}</td>
+      <td class="py-2 pr-3 text-right font-medium whitespace-nowrap">${x.n ? money2(x.usd) : '<span class="text-slate-600">—</span>'}${nativo}</td>
+      <td class="py-2 pr-3 text-right whitespace-nowrap">${provCeldaDelta(dPrev)}</td>
+      <td class="py-2 text-right whitespace-nowrap">${provCeldaDelta(dYear)}</td>
+    </tr>`;
+  }).join('');
+
+  // Detalle (más recientes primero, máximo 100)
+  document.getElementById('provCount').textContent = '(' + txs.length + ')';
+  document.getElementById('provDetalle').innerHTML = txs.slice(-100).reverse().map(t => `
+    <tr class="hover:bg-slate-800/50">
+      <td class="py-2 pr-3 text-slate-400 whitespace-nowrap">${t.fecha || ''}</td>
+      <td class="py-2 pr-3"><span class="px-2 py-0.5 rounded-full text-xs bg-slate-800 text-slate-200">${t.persona || '—'}</span></td>
+      <td class="py-2 pr-3 text-slate-300">${(t.descripcion || '').replace(/_/g, ' ')}${t.manual ? ' <span class="text-xs text-amber-400">· manual</span>' : ''}</td>
+      <td class="py-2 pr-3 text-xs text-slate-400">${t.categoria || ''}</td>
+      <td class="py-2 text-right font-medium whitespace-nowrap">${money2(usd(t))}${t.moneda !== 'USD' ? `<div class="text-xs text-slate-500 font-normal">${native(t)}</div>` : ''}</td>
+    </tr>`).join('');
+}
+
+// Descarga la comparación mensual + el detalle en un CSV (con BOM para Excel).
+function provExportarCsv() {
+  const { q, txs } = provFiltradas();
+  if (!q || !txs.length) return;
+  const porMes = {};
+  for (const t of txs) {
+    const m = t.mes || String(t.fecha || '').slice(0, 7);
+    const a = porMes[m] || (porMes[m] = { n: 0, usd: 0, crc: 0 });
+    a.n++; a.usd += usd(t); if (t.moneda === 'CRC') a.crc += Number(t.monto) || 0;
+  }
+  const lineas = [['Mes', 'Cobros', 'Total USD', 'Total CRC original', 'Delta % vs mes anterior']];
+  let prev = null;
+  for (const m of Object.keys(porMes).sort()) {
+    const a = porMes[m];
+    const d = prev ? provDelta(a.usd, prev) : null;
+    lineas.push([m, a.n, a.usd.toFixed(2), a.crc ? a.crc.toFixed(0) : '', d === null ? '' : d.toFixed(1)]);
+    prev = a.usd;
+  }
+  lineas.push([], ['Fecha', 'Persona', 'Descripción', 'Categoría', 'Moneda', 'Monto original', 'Monto USD']);
+  for (const t of txs) {
+    lineas.push([t.fecha || '', t.persona || '', (t.descripcion || '').replace(/;/g, ','), t.categoria || '', t.moneda || '', t.monto ?? '', usd(t).toFixed(2)]);
+  }
+  const csv = lineas.map(f => f.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'proveedor_' + q + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+let provTimer = null;
+function provOnInput() {
+  clearTimeout(provTimer);
+  provTimer = setTimeout(renderProveedor, 180);
+}
+document.getElementById('provTexto').addEventListener('input', provOnInput);
+document.getElementById('provPersona').addEventListener('change', renderProveedor);
+document.getElementById('provCategoria').addEventListener('change', renderProveedor);
+document.getElementById('provPeriodo').addEventListener('change', renderProveedor);
+document.getElementById('provExportar').addEventListener('click', provExportarCsv);
+document.getElementById('provLimpiar').addEventListener('click', () => {
+  document.getElementById('provTexto').value = '';
+  document.getElementById('provPersona').value = '';
+  document.getElementById('provCategoria').value = '';
+  document.getElementById('provPeriodo').value = '';
+  renderProveedor();
+});
+
+// Cambia entre las pestañas: resultados, proveedor, ingresar datos y guía.
 function mostrarPanel(panel) {
-  const paneles = { resultados: 'panelResultados', ingresar: 'panelIngresar', guia: 'panelGuia' };
+  const paneles = { resultados: 'panelResultados', proveedor: 'panelProveedor', ingresar: 'panelIngresar', guia: 'panelGuia' };
   for (const k in paneles) {
     const el = document.getElementById(paneles[k]);
     if (el) el.classList.toggle('hidden', k !== panel);
   }
   document.getElementById('tabResultados').classList.toggle('tab-active', panel === 'resultados');
+  document.getElementById('tabProveedor').classList.toggle('tab-active', panel === 'proveedor');
   document.getElementById('tabIngresar').classList.toggle('tab-active', panel === 'ingresar');
   document.getElementById('tabGuia').classList.toggle('tab-active', panel === 'guia');
   if (panel === 'resultados') render(); // recrear gráficos ya con el panel visible (evita charts en 0x0)
+  if (panel === 'proveedor') renderProveedor(); // ídem para el gráfico del proveedor
 }
 window.mostrarPanel = mostrarPanel;
 
 function render() {
   poblarSelectores();
+  provPoblar();
   renderKpis();
   renderIngresos();
   renderGastoManual();

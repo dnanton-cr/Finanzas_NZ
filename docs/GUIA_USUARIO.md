@@ -22,11 +22,12 @@ Se abre directo, sin usuario ni contraseña.
 
 ---
 
-## La página tiene dos pestañas
+## La página tiene tres pestañas
 
 Arriba, debajo del título:
 
 - **📊 Resultados** → para *consultar* la información.
+- **🔎 Proveedor** → para seguir un proveedor en el tiempo (AyA, CNFL, ICE…).
 - **📥 Ingresar datos** → para *cargar* información nueva.
 
 Todo lo que se carga aparece al instante en Resultados.
@@ -95,7 +96,56 @@ Todas las compras del mes. Podés:
 
 ---
 
-## 2) Pestaña Ingresar datos
+## 2) Pestaña Proveedor
+
+Sirve para responder una pregunta concreta: **¿cuánto me cobra este proveedor y
+ha bajado?** Por ejemplo los cobros del agua (AyA), la electricidad (CNFL) o el
+ICE.
+
+Trabaja con **todo el histórico**, sin depender del mes elegido en el encabezado.
+
+### Cómo se usa
+
+1. Escribí el nombre en el campo *Proveedor o texto del cobro*, o tocá uno de los
+   proveedores frecuentes que aparecen como botones.
+2. La consulta se actualiza sola mientras escribís (no hay que presionar nada).
+3. Afiná con los filtros **Persona**, **Categoría** y **Periodo** (6, 12, 24
+   meses o todo el histórico).
+
+La búsqueda ignora acentos, espacios y números de contrato, porque el estado de
+cuenta parte las palabras:
+
+| Escribís | Encuentra |
+|---|---|
+| `aya` | «A Y A PAR 3233768» |
+| `cnfl` | «CNFL PAR 274220» y «C.N.F.L.PAGUELO 274220» |
+| `ice` | «ICE CARGOS AUTOMATICOS», «I.C.E. PAGUELO», «APP KOLBI ICE» |
+| `cafeter` | «409 Cafetería Boje» |
+
+No confunde comercios parecidos: `aya` **no** trae «GUACAMAYA» ni «PLAYA».
+
+### Qué muestra
+
+- **Tarjetas de resumen:** total histórico y número de cobros; promedio por mes
+  (solo meses con cobro); último cobro y su mes; **tendencia** (promedio de los
+  últimos 3 meses con cobro contra los 3 anteriores); mes más alto.
+- **Gráfico de barras por mes** con la línea punteada del promedio. Los meses sin
+  cobro se dibujan en 0 (en gris) para que se note una interrupción.
+- **Tabla mes a mes** con cobros, total y dos variaciones: contra el mes anterior
+  y contra el mismo mes del año pasado.
+- **Detalle de cobros** (los 100 más recientes) con persona, descripción,
+  categoría y monto original.
+- **Exportar CSV** descarga la tabla mensual y el detalle para abrirlo en Excel.
+
+### Cómo leer los colores
+
+En gastos, bajar es bueno: **verde = el cobro bajó**, **rojo = subió**. La
+tendencia de las tarjetas usa el mismo criterio, así que una flecha verde con
+«▼ 18%» significa que el proveedor se redujo.
+
+---
+
+## 3) Pestaña Ingresar datos
 
 ### a) Subir estado de cuenta (PDF)
 Botón **"Subir estado de cuenta"**. Arrastrás el PDF de BAC (o hacés clic para elegirlo). El archivo **se procesa en tu navegador**, no se envía a ningún servidor.
